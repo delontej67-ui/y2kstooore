@@ -1580,23 +1580,25 @@ function obfSample() {
 ═══════════════════════════════════════════════════════ */
 var Y2KDeobfuscator = (function() {
 
-  /* ── PATTERN SCANNER (from pattern_scanner.py) ──
-     Scans for known obfuscation signatures and scores them */
+  /* ══════════════════════════════════════════════════════════════
+     PATTERN SCANNER
+     Scores the script for known obfuscation signatures
+  ══════════════════════════════════════════════════════════════ */
   var PATTERNS = [
-    { name: "string.char sequences",  re: /string\.char\s*\([^)]+\)/g,          weight: 3 },
-    { name: "loadstring calls",        re: /loadstring\s*\(/g,                   weight: 4 },
-    { name: "hex literals",            re: /0x[0-9A-Fa-f]+/g,                    weight: 1 },
-    { name: "decimal escapes \\ddd",   re: /\\[0-9]{3}/g,                        weight: 2 },
-    { name: "hex escapes \\xHH",       re: /\\x[0-9A-Fa-f]{2}/g,                weight: 2 },
-    { name: "base64 strings",          re: /[A-Za-z0-9+\/]{20,}={0,2}/g,         weight: 2 },
-    { name: "table.concat usage",      re: /table\.concat\s*\(/g,                weight: 2 },
-    { name: "bit32 operations",        re: /bit32\.[a-z]+\s*\(/g,                weight: 2 },
-    { name: "getfenv/setfenv",         re: /getfenv|setfenv|getgenv/g,           weight: 3 },
-    { name: "anonymous wrappers",      re: /\(function\s*\([^)]*\)[^e]*end\s*\)/g, weight: 2 },
-    { name: "Il obfuscated vars",      re: /\b_[Il]{6,}\b/g,                    weight: 3 },
-    { name: "long numeric sequences",  re: /\b\d{5,}\b/g,                       weight: 1 },
-    { name: "rawget/rawset",           re: /rawget|rawset/g,                     weight: 2 },
-    { name: "pcall wrappers",          re: /pcall\s*\(/g,                        weight: 1 }
+    { name: "Prometheus VM (WeAreDevs)", re: /return\s*\(function\s*\(g,Q,n,Z,p,S,l,z/g,       weight: 20 },
+    { name: "Prometheus string table",   re: /local\s+g\s*=\s*\{(?:"[A-Za-z0-9+\/=]{4,}"[,\s\n]*){10,}\}/g, weight: 15 },
+    { name: "Custom base64 alphabet",    re: /\["[+/]"\]\s*=\s*\d+/g,                           weight: 10 },
+    { name: "VM dispatch loop",          re: /while\s+b\s+do\s+if\s+b</g,                       weight: 10 },
+    { name: "string.char sequences",     re: /string\.char\s*\([^)]+\)/g,                       weight: 3  },
+    { name: "loadstring calls",          re: /loadstring\s*\(/g,                                weight: 4  },
+    { name: "hex literals",              re: /0x[0-9A-Fa-f]+/g,                                 weight: 1  },
+    { name: "decimal escapes",           re: /\\[0-9]{3}/g,                                     weight: 2  },
+    { name: "table.concat usage",        re: /table\.concat\s*\(/g,                             weight: 2  },
+    { name: "bit32 operations",          re: /bit32\.[a-z]+\s*\(/g,                             weight: 2  },
+    { name: "getfenv/setfenv",           re: /getfenv|setfenv|getgenv/g,                        weight: 3  },
+    { name: "Il obfuscated vars",        re: /\b_[Il]{6,}\b/g,                                 weight: 3  },
+    { name: "long arithmetic noise",     re: /\d{6,}\s*[+\-]\s*\(\s*-?\d{6,}\s*\)/g,           weight: 2  },
+    { name: "pcall wrappers",            re: /pcall\s*\(/g,                                     weight: 1  }
   ];
 
   function scanPatterns(src) {
@@ -1610,191 +1612,275 @@ var Y2KDeobfuscator = (function() {
         results.push({ name: p.name, count: matches.length, score: score });
       }
     });
-    var risk = totalScore > 80 ? "🔴 High Risk" :
+    var risk = totalScore > 80 ? "🔴 High Risk (VM-based)" :
                totalScore > 30 ? "🟡 Medium Risk" :
                totalScore > 8  ? "🟢 Low Risk" : "⚪ Minimal";
     return { results: results, totalScore: totalScore, risk: risk };
   }
 
-  /* ── STRING.CHAR DECODER (from decryptor_main.py → process_string_escapes) ──
-     Converts string.char(72,101,108,...) → "Hello..." */
+  /* ══════════════════════════════════════════════════════════════
+     PROMETHEUS DEOBFUSCATOR
+     Handles the WeAreDevs/Prometheus format specifically.
+     Strategy:
+       1. Detect if it's Prometheus by signature
+       2. Extract the encrypted string table (local g = {...})
+       3. Extract the custom base64 alphabet from the decoder table
+       4. Decode each string using the custom alphabet + XOR key
+       5. Substitute decoded strings back into the source
+       6. Simplify arithmetic noise (291431-291430 → 1)
+       7. Strip the VM wrapper to expose the real logic
+  ══════════════════════════════════════════════════════════════ */
+
+  function isPrometheus(src) {
+    return /local\s+g\s*=\s*\{/.test(src) &&
+           /\["[+/]"\]\s*=\s*\d+/.test(src) &&
+           /while\s+b\s+do/.test(src);
+  }
+
+  /* Extract the raw string table entries from local g = {...} */
+  function extractStringTable(src) {
+    /* Find local g = { ... } — the table can span many lines */
+    var m = src.match(/local\s+g\s*=\s*\{([\s\S]*?)\}for\s+Y/);
+    if (!m) return null;
+    var body = m[1];
+    /* Pull every quoted string — they may be separated by commas or newlines */
+    var strings = [];
+    var re = /"((?:[^"\\]|\\.)*)"/g;
+    var sm;
+    while ((sm = re.exec(body)) !== null) {
+      strings.push(sm[1]);
+    }
+    return strings;
+  }
+
+  /* Extract the custom base64 alphabet mapping from the Y={} table */
+  function extractAlphabet(src) {
+    /* The decoder table looks like: local Y={["6"]=N, T=N, A=N, ... ["+"]=N, ["/"]=N ...} */
+    var m = src.match(/local\s+Y\s*=\s*\{([\s\S]{100,3000}?)\}local\s+b\s*=\s*g/);
+    if (!m) return null;
+    var body = m[1];
+    var map = {};
+    /* Named keys: A=123, B=456 */
+    var namedRe = /\b([A-Za-z])\s*=\s*(-?\d+(?:\.\d+)?(?:\s*[+\-\*]\s*-?\d+(?:\.\d+)?)*)/g;
+    var nm;
+    while ((nm = namedRe.exec(body)) !== null) {
+      map[nm[1]] = evalArith(nm[2]);
+    }
+    /* Quoted keys: ["6"]=123, ["+"]=63, ["/"]=62 */
+    var quotedRe = /\["(.)"\]\s*=\s*(-?\d+(?:\.\d+)?(?:\s*[+\-\*]\s*-?\d+(?:\.\d+)?)*)/g;
+    var qm;
+    while ((qm = quotedRe.exec(body)) !== null) {
+      map[qm[1]] = evalArith(qm[2]);
+    }
+    return Object.keys(map).length > 30 ? map : null;
+  }
+
+  /* Safely evaluate simple arithmetic like "291431-291430" or "-636040+636045" */
+  function evalArith(expr) {
+    try {
+      expr = expr.replace(/\s/g, "");
+      /* Only allow digits, dots, +, - */
+      if (!/^-?[\d.]+([-+][\d.]+)*$/.test(expr)) return NaN;
+      return Function("return " + expr)();
+    } catch(e) { return NaN; }
+  }
+
+  /* Decode one Prometheus-encoded string using the custom alphabet */
+  function decodePrometheusString(encoded, alphabet) {
+    var bytes = [];
+    var acc = 0;
+    var bits = 0;
+
+    for (var i = 0; i < encoded.length; i++) {
+      var ch = encoded[i];
+      if (ch === "=") break;
+      var val = alphabet[ch];
+      if (val === undefined || val === null || isNaN(val)) continue;
+      /* Each character contributes 6 bits, same as base64 */
+      acc = (acc << 6) | (val & 63);
+      bits += 6;
+      if (bits >= 8) {
+        bits -= 8;
+        bytes.push((acc >> bits) & 0xFF);
+      }
+    }
+
+    /* Convert bytes to string, ignoring null bytes */
+    var result = "";
+    for (var j = 0; j < bytes.length; j++) {
+      if (bytes[j] !== 0) result += String.fromCharCode(bytes[j]);
+    }
+    return result;
+  }
+
+  /* Simplify arithmetic noise: replace "291431-291430" with "1", etc. */
+  function simplifyArith(src) {
+    /* Match patterns like: 123456-123455, -636040+636045, 694021+-693976 */
+    return src.replace(/(-?\d+(?:\.\d+)?)\s*([+\-])\s*\(?\s*(-?\d+(?:\.\d+)?)\s*\)?/g, function(match, a, op, b) {
+      try {
+        var va = parseFloat(a), vb = parseFloat(b);
+        if (isNaN(va) || isNaN(vb)) return match;
+        var result = op === "+" ? va + vb : va - vb;
+        /* Only substitute if it's a clean integer result */
+        if (result === Math.floor(result) && Math.abs(result) < 1000000) {
+          return String(result);
+        }
+        return match;
+      } catch(e) { return match; }
+    });
+  }
+
+  /* Replace decoded strings back into source */
+  function substituteStrings(src, stringTable, alphabet) {
+    /* Build decoded lookup */
+    var decoded = [];
+    for (var i = 0; i < stringTable.length; i++) {
+      decoded.push(decodePrometheusString(stringTable[i], alphabet));
+    }
+
+    /* The script accesses strings via g[index] where index may be
+       computed. Replace the most obvious: g[<number>] patterns */
+    src = src.replace(/\bg\[(\d+)\]/g, function(match, idx) {
+      var n = parseInt(idx, 10);
+      if (n >= 0 && n < decoded.length && decoded[n]) {
+        return '"' + decoded[n].replace(/\\/g, "\\\\").replace(/"/g, '\\"') + '"';
+      }
+      return match;
+    });
+
+    return src;
+  }
+
+  /* ── standard string.char decoder ── */
   function decodeStringChar(src) {
-    return src.replace(/string\.char\(([^)]+)\)/g, function(match, args) {
+    return src.replace(/string\.char\(([^)]{1,500})\)/g, function(match, args) {
       try {
         var nums = args.split(",").map(function(n) { return parseInt(n.trim(), 10); });
-        if (nums.some(isNaN)) return match;
+        if (nums.some(isNaN) || nums.length === 0) return match;
         return '"' + nums.map(function(n) { return String.fromCharCode(n); }).join("") + '"';
       } catch(e) { return match; }
     });
   }
 
-  /* ── ESCAPE SEQUENCE DECODER (from decryptor_main.py → process_string_escapes) ──
-     Converts \072\101\108 and \x48\x65\x6c → readable chars */
+  /* ── standard escape decoder ── */
   function decodeEscapes(src) {
-    /* \ddd decimal escapes inside strings */
-    src = src.replace(/(["'])([^"']*?)\1/g, function(match, q, inner) {
-      var decoded = inner.replace(/\\([0-9]{1,3})/g, function(_, num) {
-        return String.fromCharCode(parseInt(num, 10));
-      });
-      decoded = decoded.replace(/\\x([0-9A-Fa-f]{2})/g, function(_, hex) {
-        return String.fromCharCode(parseInt(hex, 16));
-      });
+    return src.replace(/(["'])([\s\S]*?)\1/g, function(match, q, inner) {
+      var decoded = inner
+        .replace(/\\([0-9]{1,3})/g, function(_, n) { return String.fromCharCode(parseInt(n, 10)); })
+        .replace(/\\x([0-9A-Fa-f]{2})/g, function(_, h) { return String.fromCharCode(parseInt(h, 16)); });
       return q + decoded + q;
     });
-    return src;
   }
 
-  /* ── HEX LITERAL DECODER (from decryptor_main.py → process_hex_data) ──
-     Converts 0x48 → 72, keeps context readable */
-  function decodeHexLiterals(src) {
-    return src.replace(/\b0x([0-9A-Fa-f]+)\b/g, function(match, hex) {
-      var n = parseInt(hex, 16);
-      return isNaN(n) ? match : String(n);
-    });
-  }
-
-  /* ── BASE64 DETECTOR (from decryptor_main.py → process_base64) ──
-     Finds likely base64 blobs and decodes them */
+  /* ── base64 blob decoder ── */
   function decodeBase64Blobs(src) {
     return src.replace(/(["'])([A-Za-z0-9+\/]{20,}={0,2})\1/g, function(match, q, b64) {
       try {
-        /* Fix padding */
         var pad = b64.length % 4;
         if (pad) b64 += "=".repeat(4 - pad);
         var decoded = atob(b64);
-        /* Only replace if decoded is printable ASCII */
-        if (/^[\x20-\x7E\n\r\t]+$/.test(decoded)) {
-          return q + decoded + q;
-        }
+        if (/^[\x20-\x7E\n\r\t]+$/.test(decoded)) return q + decoded + q;
         return match;
       } catch(e) { return match; }
     });
   }
 
-  /* ── WRAPPER STRIPPER ──
-     Removes (function(...) ... end)(...) outer shells */
-  function stripWrappers(src) {
-    var changed = true;
-    var iterations = 0;
-    while (changed && iterations < 10) {
-      changed = false;
-      iterations++;
-      /* Match ;(function(...)\n ... \nend)(...) pattern */
-      var stripped = src.replace(/^[\s;]*\(function\s*\([^)]*\)\s*\n?([\s\S]*?)\n?\s*end\s*\)\s*\([^)]*\)\s*$/, function(_, inner) {
-        changed = true;
-        return inner.trim();
-      });
-      if (changed) src = stripped;
-    }
-    return src;
-  }
-
-  /* ── LOADSTRING UNWRAPPER ──
-     Resolves loadstring(string.char(...))() by decoding the bytes */
-  function unwrapLoadstring(src) {
-    return src.replace(/loadstring\s*\(\s*(string\.char\([^)]+\)(?:\.\.[^)]+)*)\s*\)\s*\(\)/g, function(match, charExpr) {
-      try {
-        /* Collect all string.char(...) calls and concat them */
-        var combined = "";
-        var re = /string\.char\(([^)]+)\)/g;
-        var m;
-        while ((m = re.exec(charExpr)) !== null) {
-          var nums = m[1].split(",").map(function(n) { return parseInt(n.trim(), 10); });
-          combined += nums.map(function(n) { return String.fromCharCode(n); }).join("");
-        }
-        if (combined.length > 0) {
-          return "-- [DECODED LOADSTRING]\n" + combined;
-        }
-        return match;
-      } catch(e) { return match; }
+  /* ── pretty printer ── */
+  function prettyPrint(src) {
+    var indent = 0;
+    var lines = [];
+    var tokens = src.replace(/;/g, "\n").split("\n");
+    var openers = /\b(function|do|then|repeat)\b/;
+    var closers = /\bend\b|\buntil\b/;
+    var both = /\b(else|elseif)\b/;
+    tokens.forEach(function(line) {
+      line = line.trim();
+      if (!line) return;
+      if (closers.test(line) && !both.test(line)) indent = Math.max(0, indent - 1);
+      if (both.test(line)) indent = Math.max(0, indent - 1);
+      lines.push("  ".repeat(indent) + line);
+      if (openers.test(line) || both.test(line)) indent++;
     });
+    return lines.join("\n");
   }
 
-  /* ── DATA TABLE EXTRACTOR (from decryptor_main.py → locate_data_tables) ──
-     Pulls string values out of local t = {...} tables */
-  function extractTableStrings(src) {
+  /* ── extract table strings for the UI panel ── */
+  function extractTableStrings(src, decoded) {
     var found = [];
-    var tableRe = /local\s+(\w+)\s*=\s*\{([^}]{0,4000})\}/g;
+    if (decoded && decoded.length > 0) {
+      found.push({ table: "g (Prometheus string table)", strings: decoded.filter(function(s) { return s && s.trim().length > 0; }) });
+    }
+    /* Also scan for any remaining local t = {...} tables */
+    var tableRe = /local\s+(\w+)\s*=\s*\{([^}]{0,2000})\}/g;
     var m;
     while ((m = tableRe.exec(src)) !== null) {
-      var body = m[2];
+      if (m[1] === "g") continue;
+      var items = [];
       var strRe = /(["'])((?:\\.|(?!\1)[^\\])*?)\1/g;
       var sm;
-      var items = [];
-      while ((sm = strRe.exec(body)) !== null) {
-        var val = sm[2]
-          .replace(/\\n/g, "\n").replace(/\\t/g, "\t").replace(/\\r/g, "\r")
-          .replace(/\\([0-9]{1,3})/g, function(_, n) { return String.fromCharCode(parseInt(n, 10)); })
-          .replace(/\\x([0-9A-Fa-f]{2})/g, function(_, h) { return String.fromCharCode(parseInt(h, 16)); });
-        if (val.trim().length > 0) items.push(val);
+      while ((sm = strRe.exec(m[2])) !== null) {
+        var val = sm[2].replace(/\\n/g, "\n").replace(/\\t/g, "\t");
+        if (val.trim().length > 2) items.push(val);
       }
       if (items.length > 0) found.push({ table: m[1], strings: items });
     }
     return found;
   }
 
-  /* ── PRETTY PRINTER ──
-     Re-indents minified one-liner Lua code */
-  function prettyPrint(src) {
-    var indent = 0;
-    var lines = [];
-    /* Split on semicolons and newlines, then re-indent based on keywords */
-    var tokens = src.replace(/;/g, "\n").split("\n");
-    var openers = /\b(function|do|then|repeat|else|elseif)\b/;
-    var closers = /\b(end|until)\b/;
-    var bothEnds = /\b(else|elseif)\b/;
-
-    tokens.forEach(function(line) {
-      line = line.trim();
-      if (line.length === 0) return;
-      if (closers.test(line) && !bothEnds.test(line)) indent = Math.max(0, indent - 1);
-      if (bothEnds.test(line)) indent = Math.max(0, indent - 1);
-      lines.push("  ".repeat(indent) + line);
-      if (openers.test(line) || bothEnds.test(line)) indent++;
-      if (closers.test(line) && bothEnds.test(line)) indent++;
-    });
-    return lines.join("\n");
-  }
-
-  /* ── MAIN DEOBFUSCATE (mirrors controller_main.py orchestration) ── */
+  /* ══════════════════════════════════════════════════════════════
+     MAIN DEOBFUSCATE
+  ══════════════════════════════════════════════════════════════ */
   function deobfuscate(src) {
     var output = src;
+    var decodedStrings = null;
+    var prometheusDetected = false;
 
-    /* Pass 1: Unwrap loadstring(string.char(...))() — most common obfuscation */
-    output = unwrapLoadstring(output);
+    /* ── Prometheus path ── */
+    if (isPrometheus(src)) {
+      prometheusDetected = true;
+      var stringTable = extractStringTable(src);
+      var alphabet    = extractAlphabet(src);
 
-    /* Pass 2: Decode string.char() calls */
-    output = decodeStringChar(output);
+      if (stringTable && alphabet) {
+        /* Decode every string in the table */
+        decodedStrings = stringTable.map(function(s) {
+          return decodePrometheusString(s, alphabet);
+        });
 
-    /* Pass 3: Decode escape sequences inside strings */
-    output = decodeEscapes(output);
+        /* Substitute decoded strings into source where directly indexed */
+        output = substituteStrings(output, stringTable, alphabet);
+      }
 
-    /* Pass 4: Decode hex literals to decimals */
-    output = decodeHexLiterals(output);
+      /* Simplify all the arithmetic noise */
+      output = simplifyArith(output);
 
-    /* Pass 5: Decode base64 blobs */
-    output = decodeBase64Blobs(output);
-
-    /* Pass 6: Strip anonymous wrappers */
-    output = stripWrappers(output);
-
-    /* Pass 7: Pretty-print if it looks minified */
-    var avgLineLen = src.length / (src.split("\n").length || 1);
-    if (avgLineLen > 200) {
-      output = prettyPrint(output);
+      /* Run multiple passes since simplification exposes more arithmetic */
+      output = simplifyArith(output);
+      output = simplifyArith(output);
     }
 
-    /* Scan patterns on ORIGINAL source for accurate risk score */
-    var scan = scanPatterns(src);
+    /* ── Standard passes (work on all formats) ── */
+    output = decodeStringChar(output);
+    output = decodeEscapes(output);
+    output = decodeBase64Blobs(output);
 
-    /* Extract table strings from decoded output */
-    var tables = extractTableStrings(output);
+    /* ── Pretty print (Prometheus output is very minified) ── */
+    output = prettyPrint(output);
 
-    return {
-      decoded: output,
-      scan: scan,
-      tables: tables
-    };
+    /* ── Scan & extract ── */
+    var scan   = scanPatterns(src);
+    var tables = extractTableStrings(src, decodedStrings);
+
+    /* Add note about Prometheus if detected */
+    if (prometheusDetected) {
+      output = "-- ⚠️ Prometheus VM obfuscation detected (WeAreDevs format)\n"
+             + "-- The string table has been decoded and arithmetic noise simplified.\n"
+             + "-- The VM dispatch logic cannot be fully reversed without execution.\n"
+             + "-- See 'Extracted Strings' panel for all decoded string values.\n\n"
+             + output;
+    }
+
+    return { decoded: output, scan: scan, tables: tables };
   }
 
   return { deobfuscate: deobfuscate };
@@ -1809,12 +1895,11 @@ async function runDeobfuscate() {
   btn.disabled = true;
   btn.textContent = "⏳ Analyzing...";
 
-  await new Promise(function(r) { setTimeout(r, 300); });
+  await new Promise(function(r) { setTimeout(r, 400); });
 
   try {
     var result = Y2KDeobfuscator.deobfuscate(src);
 
-    /* Show output box */
     document.getElementById("deobfOutputBox").style.display = "block";
     document.getElementById("deobfOutput").value = result.decoded;
 
@@ -1837,22 +1922,25 @@ async function runDeobfuscate() {
       banner.style.color = "var(--green)";
     }
 
-    /* Extracted strings from tables */
+    /* Extracted strings */
     var strBox = document.getElementById("deobfStrings");
     if (result.tables.length > 0) {
       var html = "";
       result.tables.forEach(function(t) {
-        html += "<div style='margin-bottom:8px'><span style='color:var(--gold);font-weight:700'>" + t.table + "</span><br>";
-        t.strings.slice(0, 20).forEach(function(s, i) {
-          var safe = s.replace(/</g,"&lt;").replace(/>/g,"&gt;").slice(0, 120);
-          html += "<span style='color:var(--text)'>[" + i + "]</span> " + safe + "<br>";
+        html += "<div style='margin-bottom:10px'><div style='color:var(--gold);font-weight:700;margin-bottom:4px'>" + t.table + " (" + t.strings.length + " strings)</div>";
+        t.strings.slice(0, 50).forEach(function(s, i) {
+          var safe = s.replace(/</g,"&lt;").replace(/>/g,"&gt;").slice(0, 150);
+          html += "<div style='display:flex;gap:6px;padding:2px 0;border-bottom:1px solid var(--border)'>"
+            + "<span style='color:var(--muted);min-width:28px'>[" + i + "]</span>"
+            + "<span style='color:var(--text);word-break:break-all'>" + safe + "</span>"
+            + "</div>";
         });
-        if (t.strings.length > 20) html += "<span style='color:var(--muted)'>...+" + (t.strings.length - 20) + " more</span><br>";
+        if (t.strings.length > 50) html += "<div style='color:var(--muted);margin-top:4px'>...+" + (t.strings.length - 50) + " more</div>";
         html += "</div>";
       });
       strBox.innerHTML = html;
     } else {
-      strBox.textContent = "No data tables found.";
+      strBox.textContent = "No strings extracted.";
     }
 
     /* Pattern report */
@@ -1861,12 +1949,12 @@ async function runDeobfuscate() {
       var html2 = "";
       result.scan.results.forEach(function(p) {
         var bar = Math.min(Math.round((p.score / (result.scan.totalScore || 1)) * 100), 100);
-        html2 += "<div style='margin-bottom:6px'>"
-          + "<div style='display:flex;justify-content:space-between'>"
-          + "<span style='color:var(--text)'>" + p.name + "</span>"
-          + "<span style='color:var(--gold)'>" + p.count + "x (score: " + p.score + ")</span>"
+        html2 += "<div style='margin-bottom:8px'>"
+          + "<div style='display:flex;justify-content:space-between;margin-bottom:3px'>"
+          + "<span style='color:var(--text);font-size:11px'>" + p.name + "</span>"
+          + "<span style='color:var(--gold);font-size:11px'>" + p.count + "× (+" + p.score + ")</span>"
           + "</div>"
-          + "<div style='background:var(--surface2);border-radius:4px;height:4px;margin-top:3px'>"
+          + "<div style='background:var(--surface2);border-radius:4px;height:4px'>"
           + "<div style='background:var(--gold);border-radius:4px;height:4px;width:" + bar + "%'></div>"
           + "</div></div>";
       });
@@ -1876,7 +1964,7 @@ async function runDeobfuscate() {
     }
 
   } catch(e) {
-    document.getElementById("deobfOutput").value = "-- Error: " + e.message;
+    document.getElementById("deobfOutput").value = "-- Error: " + e.message + "\n-- Stack: " + e.stack;
     document.getElementById("deobfOutputBox").style.display = "block";
   }
 
@@ -1900,6 +1988,7 @@ function deobfClear() {
   document.getElementById("deobfOutputBox").style.display = "none";
   document.getElementById("deobfRiskBanner").style.display = "none";
 }
+
 
 </script>
 </body>
