@@ -847,6 +847,90 @@ body {
   </div>
 </div>
 
+
+<!-- ═══ Y2KS OBFUSCATOR PAGE ═══ -->
+<div id="obfuscatorPage" style="display:none;min-height:100vh">
+  <div class="page-head">
+    <h1>Y2KS Obfuscator</h1>
+    <p>Advanced Roblox Luau script protection</p>
+  </div>
+
+  <div class="credits">
+    Made by <a href="https://www.tiktok.com/@y2kexploits" target="_blank">@y2kexploits</a>
+    <span class="dot">·</span>
+    Join our <a href="https://discord.gg/Y4CEpSqTYb" target="_blank">Discord</a>
+  </div>
+
+  <div style="padding:0 12px 110px">
+
+    <!-- Settings -->
+    <div style="background:var(--surface);border:1px solid var(--border);border-radius:14px;padding:14px;margin-bottom:10px">
+      <div style="font-size:10px;font-weight:700;color:var(--gold);letter-spacing:.1em;text-transform:uppercase;margin-bottom:12px">⚙️ Settings</div>
+      <div style="display:flex;flex-direction:column;gap:10px">
+        <label style="display:flex;justify-content:space-between;align-items:center;font-size:12px;color:var(--muted)">
+          Variable Shadowing
+          <input type="checkbox" id="o_varRename" checked style="width:16px;height:16px;accent-color:var(--gold)">
+        </label>
+        <label style="display:flex;justify-content:space-between;align-items:center;font-size:12px;color:var(--muted)">
+          String Byte-Encoding
+          <input type="checkbox" id="o_stringEncode" checked style="width:16px;height:16px;accent-color:var(--gold)">
+        </label>
+        <label style="display:flex;justify-content:space-between;align-items:center;font-size:12px;color:var(--muted)">
+          Hex Numbering
+          <input type="checkbox" id="o_numHex" checked style="width:16px;height:16px;accent-color:var(--gold)">
+        </label>
+        <label style="display:flex;justify-content:space-between;align-items:center;font-size:12px;color:var(--muted)">
+          Advanced Wrapper
+          <input type="checkbox" id="o_wrapper" checked style="width:16px;height:16px;accent-color:var(--gold)">
+        </label>
+        <label style="display:flex;justify-content:space-between;align-items:center;font-size:12px;color:var(--muted)">
+          Minify (One Line)
+          <input type="checkbox" id="o_minify" checked style="width:16px;height:16px;accent-color:var(--gold)">
+        </label>
+      </div>
+    </div>
+
+    <!-- Input -->
+    <div style="background:var(--surface);border:1px solid var(--border);border-radius:14px;overflow:hidden;margin-bottom:10px">
+      <div class="panel-header">
+        <span class="panel-title">📝 Input Script</span>
+        <div style="display:flex;gap:12px">
+          <button onclick="obfSample()" style="background:transparent;border:none;color:var(--muted);font-size:10px;font-weight:700;cursor:pointer;font-family:'DM Sans',sans-serif;text-transform:uppercase">Sample</button>
+          <button onclick="obfClear()" style="background:transparent;border:none;color:var(--red);font-size:10px;font-weight:700;cursor:pointer;font-family:'DM Sans',sans-serif;text-transform:uppercase">Clear</button>
+        </div>
+      </div>
+      <textarea id="obfInput" class="obf-textarea" style="min-height:180px" placeholder="-- Paste your Roblox Luau script here..." spellcheck="false"></textarea>
+    </div>
+
+    <!-- Obfuscate Button -->
+    <button class="btn" id="obfBtn" style="margin-bottom:10px;padding:14px;font-size:14px" onclick="runObfuscate()">
+      ⚡ Obfuscate Script
+    </button>
+
+    <!-- Output -->
+    <div style="background:var(--surface);border:1px solid var(--border);border-radius:14px;overflow:hidden;margin-bottom:10px">
+      <div class="panel-header">
+        <span class="panel-title">🔒 Protected Output</span>
+        <button onclick="obfCopy()" id="obfCopyBtn" style="background:var(--gold-dim);border:1px solid rgba(201,168,76,0.3);color:var(--gold);font-size:10px;font-weight:700;padding:4px 10px;border-radius:6px;cursor:pointer;font-family:'DM Sans',sans-serif">COPY</button>
+      </div>
+      <textarea id="obfOutput" class="obf-textarea" style="min-height:180px;background:var(--bg);color:var(--muted);font-size:11px" placeholder="Protected code will appear here..." readonly spellcheck="false"></textarea>
+    </div>
+
+    <!-- Stats -->
+    <div style="background:var(--surface);border:1px solid var(--border);border-radius:14px;padding:14px">
+      <div style="display:flex;justify-content:space-between;font-size:12px">
+        <span style="color:var(--muted)">Characters:</span>
+        <span id="obfChars" style="color:var(--gold);font-weight:700">0</span>
+      </div>
+      <div style="display:flex;justify-content:space-between;font-size:12px;margin-top:8px">
+        <span style="color:var(--muted)">Security:</span>
+        <span id="obfSecurity" style="color:var(--green);font-weight:700">Standard</span>
+      </div>
+    </div>
+
+  </div>
+</div>
+
 <!-- ═══ BOTTOM NAV ═══ -->
 <div class="nav" id="nav">
   <a href="#" class="ni active" onclick="showNav('installs')">
@@ -860,6 +944,10 @@ body {
   <a href="#" class="ni" onclick="showNav('scripts')">
     <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="16 18 22 12 16 6"/><polyline points="8 6 2 12 8 18"/></svg>
     Scripts
+  </a>
+  <a href="#" class="ni" onclick="showNav('obfuscator')">
+    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/></svg>
+    Obfusc
   </a>
 </div>
 
@@ -899,9 +987,10 @@ function showNav(page) {
   event.preventDefault();
   document.querySelectorAll(".ni").forEach(function(n) { n.classList.remove("active"); });
   event.currentTarget.classList.add("active");
-  document.getElementById("installsPage").style.display  = page === "installs"  ? "block" : "none";
-  document.getElementById("certsPage").style.display     = page === "certs"     ? "block" : "none";
-  document.getElementById("scriptsPage").style.display  = page === "scripts"  ? "block" : "none";
+  document.getElementById("installsPage").style.display    = page === "installs"    ? "block" : "none";
+  document.getElementById("certsPage").style.display       = page === "certs"       ? "block" : "none";
+  document.getElementById("scriptsPage").style.display     = page === "scripts"     ? "block" : "none";
+  document.getElementById("obfuscatorPage").style.display  = page === "obfuscator"  ? "block" : "none";
   if (page === "scripts") loadY2KScripts();
 }
 
@@ -1154,6 +1243,170 @@ function copyScript(btnId, idx) {
     setTimeout(function() { btn.textContent = "Copy Loadstring"; }, 1500);
   });
 }
+
+/* ══════════════════════════════════════
+   Y2KS OBFUSCATOR ENGINE
+   (ported from Lua Guard source)
+══════════════════════════════════════ */
+var Y2KObfuscator = (function() {
+  var reserved = new Set([
+    'and','break','do','else','elseif','end','false','for','function','if',
+    'in','local','nil','not','or','repeat','return','then','true','until','while',
+    'print','warn','error','wait','spawn','delay','task','game','workspace','script',
+    'Enum','Vector3','Color3','Instance','getfenv','setfenv','loadstring','require',
+    'tick','time','typeof','unpack','pairs','ipairs','next','math','string','table',
+    'coroutine','debug','os','utf8','SharedTable','pcall','xpcall','select','rawequal',
+    'rawget','rawset','rawlen','newproxy','getmetatable','setmetatable','type','assert',
+    'self','owner','Players','Lighting','ReplicatedStorage','ServerScriptService',
+    'ServerStorage','StarterGui','StarterPack','StarterPlayer','Teams','SoundService',
+    'HttpService','Debris','TeleportService','GuiService','RunService','UserInputService',
+    'GetService','FindFirstChild','WaitForChild','Connect','FireServer','InvokeServer'
+  ]);
+
+  function genId() {
+    var chars = "Il";
+    var id = "";
+    for (var i = 0; i < 10; i++) id += chars[Math.floor(Math.random() * chars.length)];
+    return "_" + id;
+  }
+
+  function encodeString(str) {
+    var content = str.slice(1, -1);
+    if (content.length === 0) return str;
+    var result = "";
+    for (var i = 0; i < content.length; i++) {
+      result += "\\" + content.charCodeAt(i).toString().padStart(3, "0");
+    }
+    return '"' + result + '"';
+  }
+
+  function obfuscate(code, settings) {
+    var output = code;
+
+    // 1. Extract and protect strings
+    var strings = [];
+    output = output.replace(/(["'])(?:(?=(\\?))\2.)*?\1|\[\[[\s\S]*?\]\]/g, function(match) {
+      var id = "__LUA_STR_" + strings.length + "__";
+      strings.push(match);
+      return id;
+    });
+
+    // 2. Variable renaming
+    if (settings.varRename) {
+      var varMap = {};
+      var namesToRename = new Set();
+      var localMatches = output.matchAll(/\blocal\s+(?:function\s+)?([a-zA-Z0-9_]+)/g);
+      for (var m of localMatches) {
+        var name = m[1];
+        if (name && !reserved.has(name) && isNaN(name[0])) namesToRename.add(name);
+      }
+      var sorted = Array.from(namesToRename).sort(function(a,b){ return b.length - a.length; });
+      sorted.forEach(function(name) {
+        var newId = genId();
+        varMap[name] = newId;
+        var reg = new RegExp("(?<![.:])\b" + name + "\b", "g");
+        output = output.replace(reg, newId);
+      });
+    }
+
+    // 3. Hex numbering
+    if (settings.numHex) {
+      output = output.replace(/(?<![a-zA-Z0-9_])\b\d+(\.\d+)?\b/g, function(match) {
+        var num = parseFloat(match);
+        if (isNaN(num) || match.includes(".")) return match;
+        return "0x" + num.toString(16).toUpperCase();
+      });
+    }
+
+    // 4. Restore and encode strings
+    output = output.replace(/__LUA_STR_(\d+)__/g, function(match, index) {
+      var original = strings[parseInt(index)];
+      return settings.stringEncode ? encodeString(original) : original;
+    });
+
+    // 5. Wrapper
+    if (settings.wrapper) {
+      output = "(function(...)\n" + output + "\nend)(...)";
+    }
+
+    // 6. Minify
+    if (settings.minify) {
+      output = output.replace(/--\[\[[\s\S]*?\]\]/g, "").replace(/--.*$/gm, "");
+      var kws = ["local","function","then","do","else","elseif","return","end","and","or","not","if","while","for","in","repeat","until"];
+      kws.forEach(function(kw) {
+        output = output.replace(new RegExp("\\b" + kw + "\\b", "g"), " " + kw + " ");
+      });
+      output = output.replace(/\s+/g, " ").trim();
+      output = output.replace(/\bend\b/g, "end\n");
+    }
+
+    output = "--[[ Protected by Y2KS Obfuscator ]]\n\n" + output;
+    return output;
+  }
+
+  return { obfuscate: obfuscate };
+})();
+
+/* ── Obfuscator UI ── */
+document.addEventListener("DOMContentLoaded", function() {
+  var inp = document.getElementById("obfInput");
+  if (inp) {
+    inp.addEventListener("input", function() {
+      document.getElementById("obfChars").textContent = inp.value.length.toLocaleString();
+      var len = inp.value.length;
+      var sec = len > 2000 ? "Maximum" : len > 800 ? "High" : len > 200 ? "Standard" : "Low";
+      document.getElementById("obfSecurity").textContent = sec;
+    });
+  }
+});
+
+async function runObfuscate() {
+  var input = document.getElementById("obfInput").value.trim();
+  if (!input) return;
+  var btn = document.getElementById("obfBtn");
+  btn.disabled = true;
+  btn.textContent = "⏳ Obfuscating...";
+  await new Promise(function(r) { setTimeout(r, 400); });
+  try {
+    var settings = {
+      varRename:    document.getElementById("o_varRename").checked,
+      stringEncode: document.getElementById("o_stringEncode").checked,
+      numHex:       document.getElementById("o_numHex").checked,
+      wrapper:      document.getElementById("o_wrapper").checked,
+      minify:       document.getElementById("o_minify").checked
+    };
+    document.getElementById("obfOutput").value = Y2KObfuscator.obfuscate(input, settings);
+    btn.textContent = "✅ Done!";
+    setTimeout(function() { btn.disabled = false; btn.textContent = "⚡ Obfuscate Script"; }, 1500);
+  } catch(e) {
+    document.getElementById("obfOutput").value = "-- Error: " + e.message;
+    btn.disabled = false;
+    btn.textContent = "⚡ Obfuscate Script";
+  }
+}
+
+function obfCopy() {
+  var val = document.getElementById("obfOutput").value;
+  if (!val) return;
+  navigator.clipboard.writeText(val).then(function() {
+    var b = document.getElementById("obfCopyBtn");
+    b.textContent = "COPIED!";
+    setTimeout(function() { b.textContent = "COPY"; }, 1500);
+  });
+}
+
+function obfClear() {
+  document.getElementById("obfInput").value = "";
+  document.getElementById("obfOutput").value = "";
+  document.getElementById("obfChars").textContent = "0";
+  document.getElementById("obfSecurity").textContent = "Standard";
+}
+
+function obfSample() {
+  document.getElementById("obfInput").value = '-- Sample Script\nlocal Players = game:GetService("Players")\nlocal LocalPlayer = Players.LocalPlayer\n\nlocal function onChat(msg)\n    if msg == "hello" then\n        print("Hello from " .. LocalPlayer.Name)\n    end\nend\n\nLocalPlayer.Chatted:Connect(onChat)\nlocal secretKey = 99281\nprint("Loaded with key: " .. secretKey)';
+  document.getElementById("obfChars").textContent = document.getElementById("obfInput").value.length.toLocaleString();
+}
+
 </script>
 </body>
 </html>
