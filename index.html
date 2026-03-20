@@ -880,7 +880,7 @@ async function loadY2KScripts() {
   var c = document.getElementById("scriptsList");
   c.innerHTML = "<div class='loading-spinner'><span class='spinner'></span>Loading scripts...</div>";
   try {
-    var resp = await fetch(SB_URL + "/rest/v1/" + SB_TABLE + "?select=id,created_at&order=created_at.desc", {
+    var resp = await fetch(SB_URL + "/rest/v1/" + SB_TABLE + "?select=id,title,game,created_at&order=created_at.desc", {
       headers: { "apikey": SB_KEY, "Authorization": "Bearer " + SB_KEY }
     });
     if (!resp.ok) throw new Error(await resp.text());
@@ -896,13 +896,14 @@ async function loadY2KScripts() {
         'loadstring(_hs:JSONDecode(_res.Body)[1].content)()'
       ].join(";");
       var encoded = encodeURIComponent(loadstr);
-      var date = new Date(s.created_at).toLocaleDateString();
+      var title = (s.title || "Untitled Script").replace(/</g,"&lt;").replace(/>/g,"&gt;");
+      var game  = (s.game  || "Universal").replace(/</g,"&lt;").replace(/>/g,"&gt;");
       return "<div class='card' style='margin-bottom:10px'>"
         + "<div class='icon'><img src='https://gcdnb.pbrd.co/images/3AbMSZMmyia1.png?o=1'></div>"
         + "<div class='info'>"
-        + "<div class='nm'>Y2K Script</div>"
-        + "<div class='dev'>By @y2kexploits</div>"
-        + "<div class='st'>⚡ Added " + date + "</div>"
+        + "<div class='nm'>" + title + "</div>"
+        + "<div class='dev'>" + game + "</div>"
+        + "<div class='st'>⚡ Y2KSt0re Script</div>"
         + "</div>"
         + "<button class='btn' data-ls='" + encoded + "' onclick='copyEncoded(this)'>Copy Loadstring</button>"
         + "</div>";
@@ -1078,6 +1079,26 @@ function copyEncoded(btn) {
       var ta = document.createElement("textarea"); ta.value = str;
       document.body.appendChild(ta); ta.select(); document.execCommand("copy"); document.body.removeChild(ta);
       var o = btn.textContent; btn.textContent = "✅ Copied!"; setTimeout(function() { btn.textContent = o; }, 1500);
+    });
+}
+
+/* ── Copy script to clipboard ── */
+function copyScript(btn, text) {
+  var decoded = text.replace(/&quot;/g, '"');
+  navigator.clipboard.writeText(decoded)
+    .then(function() {
+      var orig = btn.textContent;
+      btn.textContent = "✅ Copied!";
+      setTimeout(function() { btn.textContent = orig; }, 1500);
+    })
+    .catch(function() {
+      var ta = document.createElement("textarea");
+      ta.value = decoded;
+      document.body.appendChild(ta); ta.select();
+      document.execCommand("copy"); document.body.removeChild(ta);
+      var orig = btn.textContent;
+      btn.textContent = "✅ Copied!";
+      setTimeout(function() { btn.textContent = orig; }, 1500);
     });
 }
 </script>
