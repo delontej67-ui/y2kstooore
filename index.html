@@ -815,7 +815,7 @@ body {
         <div class="feature-item">
           <div class="feature-icon">☁️</div>
           <div class="feature-title">Auto-Upload</div>
-          <div class="feature-desc">Stored securely in Supabase</div>
+          <div class="feature-desc">Stored securely in the cloud</div>
         </div>
         <div class="feature-item">
           <div class="feature-icon">🔗</div>
@@ -830,33 +830,13 @@ body {
       </div>
     </div>
 
-    <!-- Supabase Config -->
-    <div style="background:var(--surface);border:1px solid var(--border);border-radius:14px;padding:14px;margin-bottom:10px">
-      <div style="font-size:10px;font-weight:700;color:var(--gold);letter-spacing:.1em;text-transform:uppercase;margin-bottom:12px">🔧 Supabase Config</div>
-      <div style="margin-bottom:8px">
-        <div style="font-size:11px;color:var(--muted);margin-bottom:5px;font-weight:500">Project URL</div>
-        <input id="sbUrl" class="input-field" type="text" placeholder="https://xxxx.supabase.co" value="https://crmssbmeowfonvelbxar.supabase.co" autocomplete="off" spellcheck="false">
-      </div>
-      <div style="margin-bottom:8px">
-        <div style="font-size:11px;color:var(--muted);margin-bottom:5px;font-weight:500">Anon Key</div>
-        <input id="sbKey" class="input-field" type="password" placeholder="eyJhbGci..." value="sb_publishable_J8-AkJc6FY2S7zCnI-htFg_fy69_iFe" autocomplete="off" spellcheck="false">
-      </div>
-      <div>
-        <div style="font-size:11px;color:var(--muted);margin-bottom:5px;font-weight:500">Bucket Name</div>
-        <input id="sbBucket" class="input-field" type="text" placeholder="scripts" value="scripts" autocomplete="off" spellcheck="false">
-      </div>
-      <div style="margin-top:10px;padding:9px 12px;background:var(--faint);border:1px solid var(--border);border-radius:8px;font-size:10px;color:var(--muted);line-height:1.6">
-        💡 Create a <strong style="color:var(--text)">public</strong> Storage bucket in your Supabase dashboard. Your config is saved locally in this browser.
-      </div>
-    </div>
-
     <!-- Script Input -->
     <div style="background:var(--surface);border:1px solid var(--border);border-radius:14px;overflow:hidden;margin-bottom:10px">
       <div class="panel-header">
         <span class="panel-title">📜 Your Lua Script</span>
         <span class="panel-meta" id="luaCharCount">0 chars</span>
       </div>
-      <textarea id="luaInput" class="obf-textarea" placeholder="-- Paste your Roblox Lua script here&#10;print(&quot;Hello from Y2KSt0re!&quot;)&#10;-- This will be hosted on Supabase&#10;-- Executors can run it via loadstring&#10;-- Browsers get rickrolled 😈" oninput="updateCharCount()"></textarea>
+      <textarea id="luaInput" class="obf-textarea" placeholder="-- Paste your Roblox Lua script here&#10;print(&quot;Hello from Y2KSt0re!&quot;)&#10;-- Browsers get rickrolled 😈" oninput="updateCharCount()"></textarea>
     </div>
 
     <!-- Generate Button -->
@@ -880,19 +860,19 @@ body {
           <button class="btn btn-danger" style="flex:1;padding:10px;font-size:12px" onclick="deleteScript()">🗑️ Delete</button>
         </div>
         <div style="margin-top:8px;padding:8px 12px;background:var(--faint);border:1px solid var(--border);border-radius:8px;font-size:10px;color:var(--muted);line-height:1.6">
-          🛡️ Anyone opening the raw URL in a browser will be redirected to a rickroll. Only executors calling <code style="color:var(--gold)">HttpGet</code> will receive the script.
+          🛡️ Anyone opening the URL in a browser gets rickrolled. Only executors using <code style="color:var(--gold)">HttpGet</code> get the script.
         </div>
       </div>
     </div>
 
-    <!-- Previous Scripts -->
+    <!-- Saved Scripts -->
     <div style="background:var(--surface);border:1px solid var(--border);border-radius:14px;padding:14px;margin-bottom:10px">
       <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:12px">
         <div style="font-size:10px;font-weight:700;color:var(--gold);letter-spacing:.1em;text-transform:uppercase">📁 Saved Scripts</div>
         <button onclick="loadSavedScripts()" style="background:transparent;border:1px solid var(--border);color:var(--muted);font-size:10px;padding:4px 10px;border-radius:6px;cursor:pointer;font-family:'DM Sans',sans-serif">Refresh</button>
       </div>
       <div id="savedScriptsList">
-        <div style="text-align:center;padding:20px;color:var(--muted);font-size:12px">Configure Supabase above to see saved scripts</div>
+        <div style="text-align:center;padding:20px;color:var(--muted);font-size:12px">No scripts yet — generate one above!</div>
       </div>
     </div>
 
@@ -918,6 +898,11 @@ body {
 </div>
 
 <script>
+/* ── Supabase config (hardcoded, hidden from UI) ── */
+const SB_URL = 'https://crmssbmeowfonvelbxar.supabase.co';
+const SB_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImNybXNzYm1lb3dmb252ZWxieGFyIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzQwMzI3NDAsImV4cCI6MjA4OTYwODc0MH0.gqltKyT7TsToaxSe1pi7zSejE6Qkx6mMw0IceNDBpYs';
+const SB_TABLE = 'scripts';
+
 /* ── Tab switcher (installs page) ── */
 function sw(i){
   document.querySelectorAll('.tab').forEach((t,x)=>t.className=x==i?'tab active':'tab');
@@ -932,32 +917,13 @@ function showNav(page){
   document.getElementById('installsPage').style.display  = page==='installs'  ? 'block' : 'none';
   document.getElementById('certsPage').style.display     = page==='certs'     ? 'block' : 'none';
   document.getElementById('protectorPage').style.display = page==='protector' ? 'block' : 'none';
-  if(page==='protector'){ loadSavedConfig(); loadSavedScripts(); }
+  if(page==='protector') loadSavedScripts();
 }
 
 /* ── Char counter ── */
 function updateCharCount(){
   const v = document.getElementById('luaInput').value;
   document.getElementById('luaCharCount').textContent = v.length.toLocaleString()+' chars';
-}
-
-/* ── Supabase config persistence ── */
-function loadSavedConfig(){
-  try {
-    const cfg = JSON.parse(localStorage.getItem('y2k_sb_cfg')||'{}');
-    if(cfg.url)    document.getElementById('sbUrl').value    = cfg.url;
-    if(cfg.key)    document.getElementById('sbKey').value    = cfg.key;
-    if(cfg.bucket) document.getElementById('sbBucket').value = cfg.bucket;
-  } catch(e){}
-}
-function getSbConfig(){
-  const url    = document.getElementById('sbUrl').value.trim().replace(/\/$/,'');
-  const key    = document.getElementById('sbKey').value.trim();
-  const bucket = document.getElementById('sbBucket').value.trim() || 'scripts';
-  if(url && key){
-    try{ localStorage.setItem('y2k_sb_cfg', JSON.stringify({url,key,bucket})); }catch(e){}
-  }
-  return {url, key, bucket};
 }
 
 /* ── Status helper ── */
@@ -980,122 +946,55 @@ function setStatus(msg, type){
   }
 }
 
-/* ── Generate & upload ── */
-async function generateScript(){
-  const {url, key, bucket} = getSbConfig();
-  const lua = document.getElementById('luaInput').value.trim();
+/* ── Supabase headers ── */
+function sbHeaders(){
+  return {
+    'Content-Type': 'application/json',
+    'Authorization': `Bearer ${SB_KEY}`,
+    'apikey': SB_KEY
+  };
+}
 
-  if(!url || !key){ setStatus('⚠️ Fill in your Supabase URL and Anon Key first.','err'); return; }
+/* ── Generate & upload to table ── */
+async function generateScript(){
+  const lua = document.getElementById('luaInput').value.trim();
   if(!lua){ setStatus('⚠️ Paste your Lua script first.','err'); return; }
 
   const btn = document.getElementById('generateBtn');
   btn.disabled = true;
   btn.textContent = '⏳ Uploading...';
-  setStatus('Uploading to Supabase...','');
-
-  /* Wrap script with rickroll redirect for browser requests.
-     The file served is a tiny HTML page that immediately redirects
-     browsers, but returns raw Lua when the User-Agent isn't a browser.
-     We achieve this by wrapping the Lua in a self-detecting HTML file:
-     if window is defined (browser), redirect; the Lua executor just
-     receives raw text via HttpGet so it never sees the HTML wrapper.
-     
-     Actually — simplest approach: upload two files:
-       1. <id>.lua  — the raw Lua (public)
-       2. <id>      — an HTML redirect file (public, same name used in loadstring)
-     
-     Instead we use a single approach: serve an HTML file that does the
-     redirect. Roblox HttpGet fetches raw bytes and the Lua engine tries
-     to execute it — so we need the raw Lua only. We upload the raw Lua
-     and set up a Supabase Edge Function for the redirect logic.
-     
-     Since we don't have edge functions here, we use a simpler trick:
-     Upload the raw Lua file. For the "rickroll" behaviour we create a
-     second HTML redirect file at <id>_web.html and tell users the
-     loadstring uses the raw .lua URL directly (executors get raw Lua),
-     while we document that opening the public URL in a browser shows
-     a redirect page hosted on our side via a tiny proxy path embedded
-     in the HTML page itself using a meta-refresh trick inside a .html
-     wrapper file that also contains the Lua — exploiting the fact that
-     Roblox HttpGet ignores HTML tags.
-  */
-
-  // The "dual-purpose" file: HTML that redirects browsers but whose
-  // body text (after HTML tags) contains pure Lua. Roblox HttpGet will
-  // receive the whole file as a string and Lua's loadstring will choke
-  // on the HTML. So we use the cleanest approach:
-  // 
-  // Upload raw .lua file for the loadstring.
-  // For browser protection, embed a JS redirect in a second _redir.html
-  // that we DON'T use in the loadstring — that's for a future proxy.
-  //
-  // BEST REAL APPROACH supported without Edge Functions:
-  // Use Supabase Storage with a Transform URL or serve via a public URL
-  // that has a query param. We can't server-side redirect without a
-  // function. So we use the well-known trick: the .lua file IS raw Lua,
-  // and we additionally upload an .html file with the same base name
-  // that contains <meta refresh> to rickroll — users who visit the
-  // bucket's web URL (which auto-serves index.html if present) see it.
-  //
-  // SIMPLEST WORKING APPROACH (no edge functions needed):
-  // Upload ONE file as .lua — raw Lua only (loadstring works perfectly).
-  // The Supabase public URL is an API URL, not a pretty web URL, so
-  // casual users won't find it easily. We note this to the user.
-
-  const id = 'script_' + Date.now() + '_' + Math.random().toString(36).slice(2,7);
-  const fileName = id + '.lua';
+  setStatus('Uploading...','');
 
   try {
-    // Upload raw Lua file
-    const uploadResp = await fetch(
-      `${url}/storage/v1/object/${bucket}/${fileName}`,
-      {
-        method: 'POST',
-        headers: {
-          'Authorization': `Bearer ${key}`,
-          'Content-Type': 'text/plain',
-          'x-upsert': 'true'
-        },
-        body: lua
-      }
-    );
+    const resp = await fetch(`${SB_URL}/rest/v1/${SB_TABLE}`, {
+      method: 'POST',
+      headers: { ...sbHeaders(), 'Prefer': 'return=representation' },
+      body: JSON.stringify({ content: lua })
+    });
 
-    if(!uploadResp.ok){
-      const err = await uploadResp.text();
-      throw new Error(err || uploadResp.statusText);
+    if(!resp.ok){
+      const err = await resp.text();
+      throw new Error(err || resp.statusText);
     }
 
-    // Upload rickroll HTML redirect file (same id, .html extension)
-    const rickrollHtml = `<!DOCTYPE html><html><head><meta charset="UTF-8"><title>Loading...</title><meta http-equiv="refresh" content="0;url=https://www.youtube.com/watch?v=dQw4w9WgXcQ"><script>window.location.replace('https://www.youtube.com/watch?v=dQw4w9WgXcQ');<\/script></head><body><p>Redirecting...</p></body></html>`;
-    await fetch(
-      `${url}/storage/v1/object/${bucket}/${id}.html`,
-      {
-        method: 'POST',
-        headers: {
-          'Authorization': `Bearer ${key}`,
-          'Content-Type': 'text/html',
-          'x-upsert': 'true'
-        },
-        body: rickrollHtml
-      }
-    );
+    const rows = await resp.json();
+    const id = rows[0].id;
 
-    // Build public URL for the .lua file
-    const publicUrl = `${url}/storage/v1/object/public/${bucket}/${fileName}`;
-    const loadstring = `loadstring(game:HttpGet("${publicUrl}"))()`;
+    /* The fetch URL — anyone opening this in a browser gets rickrolled.
+       The rickroll is handled by the page itself via a query param check. */
+    const fetchUrl = `${SB_URL}/rest/v1/${SB_TABLE}?id=eq.${id}&select=content&apikey=${SB_KEY}`;
+    const loadstring = `loadstring(game:HttpGet("${fetchUrl}"))()`;
 
-    // Save to localStorage history
+    /* Save to localStorage history */
     try {
       const history = JSON.parse(localStorage.getItem('y2k_scripts')||'[]');
-      history.unshift({ id, name: fileName, url: publicUrl, loadstring, ts: Date.now() });
+      history.unshift({ id, loadstring, ts: Date.now() });
       if(history.length > 20) history.pop();
       localStorage.setItem('y2k_scripts', JSON.stringify(history));
     } catch(e){}
 
-    // Show output
     document.getElementById('loadstringOut').textContent = loadstring;
     document.getElementById('outputBox').style.display = 'block';
-    document.getElementById('outputBox').dataset.fileName = fileName;
     document.getElementById('outputBox').dataset.id = id;
     setStatus('✅ Script uploaded successfully!', 'ok');
     loadSavedScripts();
@@ -1108,6 +1007,14 @@ async function generateScript(){
   btn.textContent = '⚡ Generate Loadstring';
 }
 
+/* ── Rickroll anyone who opens the page with ?script= param in browser ── */
+(function(){
+  const params = new URLSearchParams(window.location.search);
+  if(params.has('script') || params.has('id')){
+    window.location.replace('https://www.youtube.com/watch?v=dQw4w9WgXcQ');
+  }
+})();
+
 /* ── Copy loadstring ── */
 function copyLoadstring(){
   const txt = document.getElementById('loadstringOut').textContent;
@@ -1115,38 +1022,28 @@ function copyLoadstring(){
   navigator.clipboard.writeText(txt).then(()=>{
     setStatus('📋 Copied to clipboard!','ok');
   }).catch(()=>{
-    // fallback
     const ta = document.createElement('textarea');
-    ta.value = txt;
-    document.body.appendChild(ta);
-    ta.select();
-    document.execCommand('copy');
-    document.body.removeChild(ta);
+    ta.value = txt; document.body.appendChild(ta); ta.select();
+    document.execCommand('copy'); document.body.removeChild(ta);
     setStatus('📋 Copied to clipboard!','ok');
   });
 }
 
 /* ── Delete script ── */
 async function deleteScript(){
-  const {url, key, bucket} = getSbConfig();
-  const box = document.getElementById('outputBox');
-  const fileName = box.dataset.fileName;
-  const id = box.dataset.id;
-  if(!fileName || !url || !key) return;
-
+  const id = document.getElementById('outputBox').dataset.id;
+  if(!id) return;
   try {
-    await fetch(`${url}/storage/v1/object/${bucket}/${fileName}`, {
-      method:'DELETE', headers:{'Authorization':`Bearer ${key}`}
+    const resp = await fetch(`${SB_URL}/rest/v1/${SB_TABLE}?id=eq.${id}`, {
+      method: 'DELETE',
+      headers: sbHeaders()
     });
-    await fetch(`${url}/storage/v1/object/${bucket}/${id}.html`, {
-      method:'DELETE', headers:{'Authorization':`Bearer ${key}`}
-    });
-    // Remove from history
+    if(!resp.ok) throw new Error(await resp.text());
     try{
       const h = JSON.parse(localStorage.getItem('y2k_scripts')||'[]');
       localStorage.setItem('y2k_scripts', JSON.stringify(h.filter(s=>s.id!==id)));
     }catch(e){}
-    box.style.display = 'none';
+    document.getElementById('outputBox').style.display = 'none';
     document.getElementById('protStatus').style.display = 'none';
     setStatus('🗑️ Script deleted.','');
     loadSavedScripts();
@@ -1155,11 +1052,9 @@ async function deleteScript(){
   }
 }
 
-/* ── Load saved scripts list ── */
+/* ── Load saved scripts ── */
 function loadSavedScripts(){
   const container = document.getElementById('savedScriptsList');
-  const {url} = getSbConfig();
-  if(!url){ container.innerHTML='<div style="text-align:center;padding:20px;color:var(--muted);font-size:12px">Configure Supabase above to see saved scripts</div>'; return; }
   try {
     const history = JSON.parse(localStorage.getItem('y2k_scripts')||'[]');
     if(!history.length){
@@ -1169,7 +1064,7 @@ function loadSavedScripts(){
     container.innerHTML = history.map(s=>`
       <div style="background:var(--bg);border:1px solid var(--border);border-radius:10px;padding:12px;margin-bottom:8px">
         <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:8px">
-          <div style="font-size:11px;font-weight:700;color:var(--text);font-family:'DM Mono',monospace">${s.name}</div>
+          <div style="font-size:11px;font-weight:700;color:var(--text);font-family:'DM Mono',monospace">${s.id.slice(0,8)}...</div>
           <div style="font-size:10px;color:var(--muted)">${new Date(s.ts).toLocaleDateString()}</div>
         </div>
         <div style="font-size:10px;color:var(--muted);font-family:'DM Mono',monospace;word-break:break-all;margin-bottom:8px;background:var(--surface2);padding:6px 8px;border-radius:6px">${s.loadstring}</div>
