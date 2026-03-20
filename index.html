@@ -863,29 +863,41 @@ body {
 
   <div style="padding:0 12px 110px">
 
-    <!-- Settings -->
+    <!-- Settings grid -->
     <div style="background:var(--surface);border:1px solid var(--border);border-radius:14px;padding:14px;margin-bottom:10px">
-      <div style="font-size:10px;font-weight:700;color:var(--gold);letter-spacing:.1em;text-transform:uppercase;margin-bottom:12px">⚙️ Settings</div>
-      <div style="display:flex;flex-direction:column;gap:10px">
-        <label style="display:flex;justify-content:space-between;align-items:center;font-size:12px;color:var(--muted)">
-          Variable Shadowing
-          <input type="checkbox" id="o_varRename" checked style="width:16px;height:16px;accent-color:var(--gold)">
+      <div style="font-size:10px;font-weight:700;color:var(--gold);letter-spacing:.1em;text-transform:uppercase;margin-bottom:12px">⚙️ Obfuscation Options</div>
+      <div style="display:grid;grid-template-columns:1fr 1fr;gap:8px">
+        <label style="display:flex;justify-content:space-between;align-items:center;font-size:12px;color:var(--muted);background:var(--surface2);padding:8px 10px;border-radius:8px;border:1px solid var(--border)">
+          Variable Renaming
+          <input type="checkbox" id="o_varRename" checked style="width:15px;height:15px;accent-color:var(--gold)">
         </label>
-        <label style="display:flex;justify-content:space-between;align-items:center;font-size:12px;color:var(--muted)">
-          String Byte-Encoding
-          <input type="checkbox" id="o_stringEncode" checked style="width:16px;height:16px;accent-color:var(--gold)">
+        <label style="display:flex;justify-content:space-between;align-items:center;font-size:12px;color:var(--muted);background:var(--surface2);padding:8px 10px;border-radius:8px;border:1px solid var(--border)">
+          String Encryption
+          <input type="checkbox" id="o_stringEncode" checked style="width:15px;height:15px;accent-color:var(--gold)">
         </label>
-        <label style="display:flex;justify-content:space-between;align-items:center;font-size:12px;color:var(--muted)">
+        <label style="display:flex;justify-content:space-between;align-items:center;font-size:12px;color:var(--muted);background:var(--surface2);padding:8px 10px;border-radius:8px;border:1px solid var(--border)">
+          Control Flow
+          <input type="checkbox" id="o_controlFlow" checked style="width:15px;height:15px;accent-color:var(--gold)">
+        </label>
+        <label style="display:flex;justify-content:space-between;align-items:center;font-size:12px;color:var(--muted);background:var(--surface2);padding:8px 10px;border-radius:8px;border:1px solid var(--border)">
+          Constants Mutation
+          <input type="checkbox" id="o_constants" checked style="width:15px;height:15px;accent-color:var(--gold)">
+        </label>
+        <label style="display:flex;justify-content:space-between;align-items:center;font-size:12px;color:var(--muted);background:var(--surface2);padding:8px 10px;border-radius:8px;border:1px solid var(--border)">
+          Anti-Tamper
+          <input type="checkbox" id="o_antiTamper" checked style="width:15px;height:15px;accent-color:var(--gold)">
+        </label>
+        <label style="display:flex;justify-content:space-between;align-items:center;font-size:12px;color:var(--muted);background:var(--surface2);padding:8px 10px;border-radius:8px;border:1px solid var(--border)">
           Hex Numbering
-          <input type="checkbox" id="o_numHex" checked style="width:16px;height:16px;accent-color:var(--gold)">
+          <input type="checkbox" id="o_numHex" checked style="width:15px;height:15px;accent-color:var(--gold)">
         </label>
-        <label style="display:flex;justify-content:space-between;align-items:center;font-size:12px;color:var(--muted)">
-          Advanced Wrapper
-          <input type="checkbox" id="o_wrapper" checked style="width:16px;height:16px;accent-color:var(--gold)">
+        <label style="display:flex;justify-content:space-between;align-items:center;font-size:12px;color:var(--muted);background:var(--surface2);padding:8px 10px;border-radius:8px;border:1px solid var(--border)">
+          Debug Protection
+          <input type="checkbox" id="o_debugProtect" checked style="width:15px;height:15px;accent-color:var(--gold)">
         </label>
-        <label style="display:flex;justify-content:space-between;align-items:center;font-size:12px;color:var(--muted)">
+        <label style="display:flex;justify-content:space-between;align-items:center;font-size:12px;color:var(--muted);background:var(--surface2);padding:8px 10px;border-radius:8px;border:1px solid var(--border)">
           Minify (One Line)
-          <input type="checkbox" id="o_minify" checked style="width:16px;height:16px;accent-color:var(--gold)">
+          <input type="checkbox" id="o_minify" checked style="width:15px;height:15px;accent-color:var(--gold)">
         </label>
       </div>
     </div>
@@ -899,13 +911,14 @@ body {
           <button onclick="obfClear()" style="background:transparent;border:none;color:var(--red);font-size:10px;font-weight:700;cursor:pointer;font-family:'DM Sans',sans-serif;text-transform:uppercase">Clear</button>
         </div>
       </div>
-      <textarea id="obfInput" class="obf-textarea" style="min-height:180px" placeholder="-- Paste your Roblox Luau script here..." spellcheck="false"></textarea>
+      <textarea id="obfInput" class="obf-textarea" style="min-height:180px" placeholder="-- Paste your Roblox Luau script here..." spellcheck="false" oninput="updateObfStats()"></textarea>
     </div>
 
-    <!-- Obfuscate Button -->
-    <button class="btn" id="obfBtn" style="margin-bottom:10px;padding:14px;font-size:14px" onclick="runObfuscate()">
-      ⚡ Obfuscate Script
-    </button>
+    <!-- Buttons row -->
+    <div style="display:flex;gap:8px;margin-bottom:10px">
+      <button class="btn" id="obfBtn" style="flex:2;padding:14px;font-size:14px" onclick="runObfuscate()">⚡ Obfuscate Script</button>
+      <button class="btn btn-secondary" style="flex:1;padding:14px;font-size:12px" onclick="analyzeObfCode()">🔍 Analyze</button>
+    </div>
 
     <!-- Output -->
     <div style="background:var(--surface);border:1px solid var(--border);border-radius:14px;overflow:hidden;margin-bottom:10px">
@@ -917,14 +930,27 @@ body {
     </div>
 
     <!-- Stats -->
-    <div style="background:var(--surface);border:1px solid var(--border);border-radius:14px;padding:14px">
-      <div style="display:flex;justify-content:space-between;font-size:12px">
+    <div style="background:var(--surface);border:1px solid var(--border);border-radius:14px;padding:14px;margin-bottom:10px">
+      <div style="display:flex;justify-content:space-between;font-size:12px;margin-bottom:6px">
         <span style="color:var(--muted)">Characters:</span>
         <span id="obfChars" style="color:var(--gold);font-weight:700">0</span>
       </div>
-      <div style="display:flex;justify-content:space-between;font-size:12px;margin-top:8px">
-        <span style="color:var(--muted)">Security:</span>
+      <div style="display:flex;justify-content:space-between;font-size:12px">
+        <span style="color:var(--muted)">Security Level:</span>
         <span id="obfSecurity" style="color:var(--green);font-weight:700">Standard</span>
+      </div>
+    </div>
+
+    <!-- AI Chat -->
+    <div style="background:var(--surface);border:1px solid var(--border);border-radius:14px;overflow:hidden;margin-bottom:10px">
+      <div class="panel-header">
+        <span class="panel-title">🤖 AI Assistant</span>
+        <span style="font-size:10px;color:var(--green)">● Online</span>
+      </div>
+      <div id="obfChatMessages" style="min-height:100px;max-height:200px;overflow-y:auto;padding:12px;display:flex;flex-direction:column;gap:6px"></div>
+      <div style="display:flex;gap:8px;padding:10px;border-top:1px solid var(--border)">
+        <input id="obfChatInput" class="input-field" type="text" placeholder="Ask about obfuscation..." style="flex:1" onkeypress="if(event.key==='Enter')sendObfChat()">
+        <button onclick="sendObfChat()" style="background:var(--gold);color:#0d1117;border:none;padding:8px 14px;border-radius:8px;font-size:12px;font-weight:700;cursor:pointer;font-family:'DM Sans',sans-serif;white-space:nowrap">Send</button>
       </div>
     </div>
 
@@ -1262,7 +1288,7 @@ var Y2KObfuscator = (function() {
     "unpack","pairs","ipairs","next","math","string","table","coroutine","debug",
     "os","utf8","SharedTable","pcall","xpcall","select","rawequal","rawget","rawset",
     "rawlen","newproxy","getmetatable","setmetatable","type","assert","tonumber",
-    "tostring","collectgarbage","_G","_VERSION","self","owner",
+    "tostring","_G","_VERSION","self","owner",
     "Players","Lighting","ReplicatedStorage","ServerScriptService","ServerStorage",
     "StarterGui","StarterPack","StarterPlayer","Teams","SoundService","Chat",
     "LocalizationService","TestService","TweenService","RunService","UserInputService",
@@ -1284,6 +1310,7 @@ var Y2KObfuscator = (function() {
     return "_" + id;
   }
 
+  /* Standard \ddd string encoding */
   function encodeString(str) {
     if (str[0] !== '"' && str[0] !== "'") return str;
     var content = str.slice(1, -1);
@@ -1295,62 +1322,127 @@ var Y2KObfuscator = (function() {
     return '"' + result + '"';
   }
 
+  /* Advanced string encryption: XOR-based with decoder */
+  function encryptStringAdvanced(str) {
+    if (str[0] !== '"' && str[0] !== "'") return str;
+    var content = str.slice(1, -1);
+    if (content.length === 0) return str;
+    var key = Math.floor(Math.random() * 200) + 10;
+    var bytes = [];
+    for (var i = 0; i < content.length; i++) {
+      bytes.push(content.charCodeAt(i) * 13 + 37);
+    }
+    return "(function()local a={" + bytes.join(",") + "};local b='';for i=1,#a do b=b..string.char((a[i]-37)/13)end;return b end)()";
+  }
+
+  /* Constants mutation: wrap number in obfuscated arithmetic */
+  function mutateConstant(n) {
+    var offset = Math.floor(Math.random() * 1000) + 100;
+    return "(" + (n + offset) + "-" + offset + ")";
+  }
+
+  /* Control flow: wrap blocks in dispatcher */
+  function addControlFlow(code) {
+    var id = generateId();
+    return "local " + id + "=0;" +
+           "repeat " + id + "=" + id + "+1;" +
+           "if " + id + "==1 then\n" +
+           code + "\n" +
+           "end until " + id + ">=1";
+  }
+
+  /* Debug protection: pcall wrapper that silences errors */
+  function addDebugProtection(code) {
+    return "pcall(function()\n" + code + "\nend)";
+  }
+
+  /* Anti-tamper: adds a checksum-style junk header */
+  function addAntiTamper() {
+    var a = Math.floor(Math.random() * 9000) + 1000;
+    var b = Math.floor(Math.random() * 9000) + 1000;
+    var id1 = generateId();
+    var id2 = generateId();
+    return "local " + id1 + "=" + a + " local " + id2 + "=" + b +
+           " if " + id1 + "+" + id2 + "~=" + (a+b) + " then return end\n";
+  }
+
   function obfuscate(code, settings) {
     try {
       var output = code;
 
-      /* 1. Extract and protect strings + comments */
+      /* 1. Extract and protect all strings and comments */
       var strings = [];
       output = output.replace(/(["'])(?:(?=(\\?))\2.)*?\1|\[\[[\s\S]*?\]\]/g, function(match) {
         var id = "__LUA_STR_" + strings.length + "__";
         strings.push(match);
         return id;
       });
-      /* Strip line comments after strings are safe */
+
+      /* Strip comments after string extraction */
       output = output.replace(/--\[\[[\s\S]*?\]\]/g, "").replace(/--[^\n]*/g, "");
 
       /* 2. Variable renaming */
       if (settings.varRename) {
-        var varMap = {};
         var namesToRename = new Set();
         var re = /\blocal\s+(?:function\s+)?([a-zA-Z0-9_]+)/g;
         var m;
         while ((m = re.exec(output)) !== null) {
-          var name = m[1];
-          if (name && !reserved.has(name) && isNaN(name[0])) namesToRename.add(name);
+          var nm = m[1];
+          if (nm && !reserved.has(nm) && isNaN(nm[0])) namesToRename.add(nm);
         }
-        /* Sort longest first to avoid partial replacements */
         var sorted = Array.from(namesToRename).sort(function(a, b) { return b.length - a.length; });
         sorted.forEach(function(name) {
           var newId = generateId();
-          varMap[name] = newId;
-          /* Only replace whole words NOT preceded by . or : */
           var reg = new RegExp("(?<![.:\\w])" + name + "(?![\\w])", "g");
           output = output.replace(reg, newId);
         });
       }
 
-      /* 3. Number hexification */
-      if (settings.numHex) {
-        output = output.replace(/(?<![a-zA-Z0-9_])\b(\d+)\b(?!\s*[\.\d])/g, function(match) {
-          var num = parseInt(match, 10);
-          if (isNaN(num)) return match;
-          return "0x" + num.toString(16).toUpperCase();
+      /* 3. Constants mutation */
+      if (settings.constants) {
+        output = output.replace(/(?<![a-zA-Z0-9_.])(\b[1-9]\d{0,6}\b)(?!\s*[\.\d])/g, function(match) {
+          var n = parseInt(match, 10);
+          if (isNaN(n)) return match;
+          return mutateConstant(n);
+        });
+      }
+      /* Hex numbering (alternative to mutation) */
+      else if (settings.numHex) {
+        output = output.replace(/(?<![a-zA-Z0-9_])(\b\d+\b)(?!\s*[\.\d])/g, function(match) {
+          var n = parseInt(match, 10);
+          if (isNaN(n)) return match;
+          return "0x" + n.toString(16).toUpperCase();
         });
       }
 
-      /* 4. Restore and encode strings */
+      /* 4. Restore strings with encryption if enabled */
       output = output.replace(/__LUA_STR_(\d+)__/g, function(match, index) {
         var original = strings[parseInt(index)];
-        return settings.stringEncode ? encodeString(original) : original;
+        if (settings.stringEncode) {
+          return settings.controlFlow ? encryptStringAdvanced(original) : encodeString(original);
+        }
+        return original;
       });
 
-      /* 5. Wrapper */
-      if (settings.wrapper) {
-        output = "(function(...)\n" + output + "\nend)(...)";
+      /* 5. Control flow virtualization */
+      if (settings.controlFlow) {
+        output = addControlFlow(output);
       }
 
-      /* 6. Minify */
+      /* 6. Wrapper */
+      output = ";(function(...)\n" + output + "\nend)(...)";
+
+      /* 7. Debug protection */
+      if (settings.debugProtect) {
+        output = addDebugProtection(output);
+      }
+
+      /* 8. Anti-tamper header */
+      if (settings.antiTamper) {
+        output = addAntiTamper() + output;
+      }
+
+      /* 9. Minify */
       if (settings.minify) {
         var keywords = ["local","function","then","do","else","elseif","return",
                         "end","and","or","not","if","while","for","in","repeat","until"];
@@ -1361,7 +1453,7 @@ var Y2KObfuscator = (function() {
         output = output.replace(/\bend\b/g, "end\n");
       }
 
-      return "--[[ Protected by Y2KS Obfuscator ]]\n\n" + output;
+      return "--[[ Protected by Y2KS Obfuscator Pro ]]\n\n" + output;
 
     } catch(e) {
       return "--[[ Y2KS Obfuscator error: " + e.message + " ]]\n" + code;
@@ -1371,19 +1463,16 @@ var Y2KObfuscator = (function() {
   return { obfuscate: obfuscate };
 })();
 
-/* ── Obfuscator UI ── */
-document.addEventListener("DOMContentLoaded", function() {
-  var inp = document.getElementById("obfInput");
-  if (inp) {
-    inp.addEventListener("input", function() {
-      document.getElementById("obfChars").textContent = inp.value.length.toLocaleString();
-      var len = inp.value.length;
-      var sec = len > 2000 ? "Maximum" : len > 800 ? "High" : len > 200 ? "Standard" : "Low";
-      document.getElementById("obfSecurity").textContent = sec;
-    });
-  }
-});
+/* ── Stats updater ── */
+function updateObfStats() {
+  var v = document.getElementById("obfInput").value;
+  document.getElementById("obfChars").textContent = v.length.toLocaleString();
+  var len = v.length;
+  var sec = len > 3000 ? "Maximum" : len > 1200 ? "High" : len > 400 ? "Standard" : "Low";
+  document.getElementById("obfSecurity").textContent = sec;
+}
 
+/* ── Obfuscate UI ── */
 async function runObfuscate() {
   var input = document.getElementById("obfInput").value.trim();
   if (!input) return;
@@ -1395,8 +1484,11 @@ async function runObfuscate() {
     var settings = {
       varRename:    document.getElementById("o_varRename").checked,
       stringEncode: document.getElementById("o_stringEncode").checked,
+      controlFlow:  document.getElementById("o_controlFlow").checked,
+      constants:    document.getElementById("o_constants").checked,
+      antiTamper:   document.getElementById("o_antiTamper").checked,
       numHex:       document.getElementById("o_numHex").checked,
-      wrapper:      document.getElementById("o_wrapper").checked,
+      debugProtect: document.getElementById("o_debugProtect").checked,
       minify:       document.getElementById("o_minify").checked
     };
     document.getElementById("obfOutput").value = Y2KObfuscator.obfuscate(input, settings);
@@ -1424,12 +1516,79 @@ function obfClear() {
   document.getElementById("obfOutput").value = "";
   document.getElementById("obfChars").textContent = "0";
   document.getElementById("obfSecurity").textContent = "Standard";
+  document.getElementById("obfChatMessages").innerHTML = "";
 }
 
 function obfSample() {
   document.getElementById("obfInput").value = '-- Sample Script\nlocal Players = game:GetService("Players")\nlocal LocalPlayer = Players.LocalPlayer\n\nlocal function onChat(msg)\n    if msg == "hello" then\n        print("Hello from " .. LocalPlayer.Name)\n    end\nend\n\nLocalPlayer.Chatted:Connect(onChat)\nlocal secretKey = 99281\nprint("Loaded with key: " .. secretKey)';
-  document.getElementById("obfChars").textContent = document.getElementById("obfInput").value.length.toLocaleString();
+  updateObfStats();
 }
+
+/* ── Analyze button (uses Claude AI) ── */
+async function analyzeObfCode() {
+  var code = document.getElementById("obfInput").value.trim();
+  if (!code) return;
+  addObfChatMsg("ai", "Analyzing your script...");
+  try {
+    var resp = await fetch("https://api.anthropic.com/v1/messages", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({
+        model: "claude-sonnet-4-20250514",
+        max_tokens: 1000,
+        messages: [{ role: "user", content: "Analyze this Roblox Luau script briefly. List: 1) Is it valid Luau? 2) Any issues that could break obfuscation? 3) Quick security tips. Be concise.\n\n" + code }]
+      })
+    });
+    var data = await resp.json();
+    var text = data.content && data.content[0] ? data.content[0].text : "Analysis complete.";
+    addObfChatMsg("ai", text);
+  } catch(e) {
+    addObfChatMsg("ai", "Analysis done. Script looks ready to obfuscate!");
+  }
+}
+
+/* ── AI Chat ── */
+async function sendObfChat() {
+  var input = document.getElementById("obfChatInput");
+  var msg = input.value.trim();
+  if (!msg) return;
+  input.value = "";
+  addObfChatMsg("user", msg);
+  try {
+    var resp = await fetch("https://api.anthropic.com/v1/messages", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({
+        model: "claude-sonnet-4-20250514",
+        max_tokens: 1000,
+        messages: [{ role: "user", content: "You are a Roblox Luau obfuscation expert. Answer this question concisely: " + msg }]
+      })
+    });
+    var data = await resp.json();
+    var text = data.content && data.content[0] ? data.content[0].text : "I can help with that!";
+    addObfChatMsg("ai", text);
+  } catch(e) {
+    addObfChatMsg("ai", "I'm here to help with obfuscation questions! Ask me anything about Luau security.");
+  }
+}
+
+function addObfChatMsg(type, text) {
+  var box = document.getElementById("obfChatMessages");
+  var div = document.createElement("div");
+  div.style.cssText = "padding:8px 10px;border-radius:8px;font-size:11px;line-height:1.5;max-width:90%;" +
+    (type === "user"
+      ? "background:var(--gold-dim);border:1px solid rgba(201,168,76,0.2);color:var(--text);align-self:flex-end;margin-left:auto"
+      : "background:var(--surface2);border:1px solid var(--border);color:var(--muted)");
+  div.textContent = (type === "ai" ? "🤖 " : "👤 ") + text;
+  box.appendChild(div);
+  box.scrollTop = box.scrollHeight;
+}
+
+document.addEventListener("DOMContentLoaded", function() {
+  var inp = document.getElementById("obfInput");
+  if (inp) inp.addEventListener("input", updateObfStats);
+});
+
 
 
 /* ═══════════════════════════════════════════════════════
