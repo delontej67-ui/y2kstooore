@@ -931,6 +931,67 @@ body {
   </div>
 </div>
 
+
+<!-- ═══ DEOBFUSCATOR PAGE ═══ -->
+<div id="deobfuscatorPage" style="display:none;min-height:100vh">
+  <div class="page-head">
+    <h1>Deobfuscator</h1>
+    <p>Decode &amp; analyze obfuscated Lua scripts</p>
+  </div>
+
+  <div class="credits">
+    Made by <a href="https://www.tiktok.com/@y2kexploits" target="_blank">@y2kexploits</a>
+    <span class="dot">·</span>
+    Join our <a href="https://discord.gg/Y4CEpSqTYb" target="_blank">Discord</a>
+  </div>
+
+  <div style="padding:0 12px 110px">
+
+    <!-- Input -->
+    <div style="background:var(--surface);border:1px solid var(--border);border-radius:14px;overflow:hidden;margin-bottom:10px">
+      <div class="panel-header">
+        <span class="panel-title">🔒 Obfuscated Script</span>
+        <button onclick="deobfClear()" style="background:transparent;border:none;color:var(--red);font-size:10px;font-weight:700;cursor:pointer;font-family:'DM Sans',sans-serif;text-transform:uppercase">Clear</button>
+      </div>
+      <textarea id="deobfInput" class="obf-textarea" style="min-height:180px" placeholder="-- Paste obfuscated Lua script here..." spellcheck="false"></textarea>
+    </div>
+
+    <!-- Deobfuscate Button -->
+    <button class="btn" id="deobfBtn" style="margin-bottom:10px;padding:14px;font-size:14px" onclick="runDeobfuscate()">
+      🔍 Deobfuscate Script
+    </button>
+
+    <!-- Risk Score Banner -->
+    <div id="deobfRiskBanner" style="display:none;border-radius:10px;padding:12px 16px;margin-bottom:10px;font-size:12px;font-weight:700;text-align:center;border:1px solid"></div>
+
+    <!-- Output -->
+    <div id="deobfOutputBox" style="display:none">
+
+      <!-- Decoded Script -->
+      <div style="background:var(--surface);border:1px solid var(--border);border-radius:14px;overflow:hidden;margin-bottom:10px">
+        <div class="panel-header">
+          <span class="panel-title">✅ Decoded Output</span>
+          <button onclick="deobfCopy()" id="deobfCopyBtn" style="background:var(--gold-dim);border:1px solid rgba(201,168,76,0.3);color:var(--gold);font-size:10px;font-weight:700;padding:4px 10px;border-radius:6px;cursor:pointer;font-family:'DM Sans',sans-serif">COPY</button>
+        </div>
+        <textarea id="deobfOutput" class="obf-textarea" style="min-height:200px;background:var(--bg);font-size:11px" readonly spellcheck="false"></textarea>
+      </div>
+
+      <!-- Extracted Strings -->
+      <div style="background:var(--surface);border:1px solid var(--border);border-radius:14px;padding:14px;margin-bottom:10px">
+        <div style="font-size:10px;font-weight:700;color:var(--gold);letter-spacing:.1em;text-transform:uppercase;margin-bottom:10px">🔑 Extracted Strings</div>
+        <div id="deobfStrings" style="font-size:11px;color:var(--muted);line-height:1.8;word-break:break-all"></div>
+      </div>
+
+      <!-- Pattern Report -->
+      <div style="background:var(--surface);border:1px solid var(--border);border-radius:14px;padding:14px;margin-bottom:10px">
+        <div style="font-size:10px;font-weight:700;color:var(--gold);letter-spacing:.1em;text-transform:uppercase;margin-bottom:10px">📊 Pattern Analysis</div>
+        <div id="deobfPatterns" style="font-size:11px;color:var(--muted);line-height:2"></div>
+      </div>
+
+    </div>
+  </div>
+</div>
+
 <!-- ═══ BOTTOM NAV ═══ -->
 <div class="nav" id="nav">
   <a href="#" class="ni active" onclick="showNav('installs')">
@@ -948,6 +1009,10 @@ body {
   <a href="#" class="ni" onclick="showNav('obfuscator')">
     <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/></svg>
     Obfusc
+  </a>
+  <a href="#" class="ni" onclick="showNav('deobfuscator')">
+    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 2l-2 2m-7.61 7.61a5.5 5.5 0 1 1-7.778 7.778 5.5 5.5 0 0 1 7.777-7.777zm0 0L15.5 7.5m0 0l3 3L22 7l-3-3m-3.5 3.5L19 4"/></svg>
+    Deobfusc
   </a>
 </div>
 
@@ -987,10 +1052,11 @@ function showNav(page) {
   event.preventDefault();
   document.querySelectorAll(".ni").forEach(function(n) { n.classList.remove("active"); });
   event.currentTarget.classList.add("active");
-  document.getElementById("installsPage").style.display    = page === "installs"    ? "block" : "none";
-  document.getElementById("certsPage").style.display       = page === "certs"       ? "block" : "none";
-  document.getElementById("scriptsPage").style.display     = page === "scripts"     ? "block" : "none";
-  document.getElementById("obfuscatorPage").style.display  = page === "obfuscator"  ? "block" : "none";
+  document.getElementById("installsPage").style.display      = page === "installs"      ? "block" : "none";
+  document.getElementById("certsPage").style.display         = page === "certs"         ? "block" : "none";
+  document.getElementById("scriptsPage").style.display       = page === "scripts"       ? "block" : "none";
+  document.getElementById("obfuscatorPage").style.display    = page === "obfuscator"    ? "block" : "none";
+  document.getElementById("deobfuscatorPage").style.display  = page === "deobfuscator"  ? "block" : "none";
   if (page === "scripts") loadY2KScripts();
 }
 
@@ -1504,6 +1570,335 @@ function obfClear() {
 function obfSample() {
   document.getElementById("obfInput").value = '-- Sample Script\nlocal Players = game:GetService("Players")\nlocal LocalPlayer = Players.LocalPlayer\n\nlocal function onChat(msg)\n    if msg == "hello" then\n        print("Hello from " .. LocalPlayer.Name)\n    end\nend\n\nLocalPlayer.Chatted:Connect(onChat)\nlocal secretKey = 99281\nprint("Loaded with key: " .. secretKey)';
   document.getElementById("obfChars").textContent = document.getElementById("obfInput").value.length.toLocaleString();
+}
+
+
+/* ═══════════════════════════════════════════════════════
+   Y2KS DEOBFUSCATOR ENGINE
+   Ported from: decryptor_main.py, pattern_scanner.py,
+                execution_engine.py, controller_main.py
+═══════════════════════════════════════════════════════ */
+var Y2KDeobfuscator = (function() {
+
+  /* ── PATTERN SCANNER (from pattern_scanner.py) ──
+     Scans for known obfuscation signatures and scores them */
+  var PATTERNS = [
+    { name: "string.char sequences",  re: /string\.char\s*\([^)]+\)/g,          weight: 3 },
+    { name: "loadstring calls",        re: /loadstring\s*\(/g,                   weight: 4 },
+    { name: "hex literals",            re: /0x[0-9A-Fa-f]+/g,                    weight: 1 },
+    { name: "decimal escapes \\ddd",   re: /\\[0-9]{3}/g,                        weight: 2 },
+    { name: "hex escapes \\xHH",       re: /\\x[0-9A-Fa-f]{2}/g,                weight: 2 },
+    { name: "base64 strings",          re: /[A-Za-z0-9+\/]{20,}={0,2}/g,         weight: 2 },
+    { name: "table.concat usage",      re: /table\.concat\s*\(/g,                weight: 2 },
+    { name: "bit32 operations",        re: /bit32\.[a-z]+\s*\(/g,                weight: 2 },
+    { name: "getfenv/setfenv",         re: /getfenv|setfenv|getgenv/g,           weight: 3 },
+    { name: "anonymous wrappers",      re: /\(function\s*\([^)]*\)[^e]*end\s*\)/g, weight: 2 },
+    { name: "Il obfuscated vars",      re: /\b_[Il]{6,}\b/g,                    weight: 3 },
+    { name: "long numeric sequences",  re: /\b\d{5,}\b/g,                       weight: 1 },
+    { name: "rawget/rawset",           re: /rawget|rawset/g,                     weight: 2 },
+    { name: "pcall wrappers",          re: /pcall\s*\(/g,                        weight: 1 }
+  ];
+
+  function scanPatterns(src) {
+    var results = [];
+    var totalScore = 0;
+    PATTERNS.forEach(function(p) {
+      var matches = src.match(p.re) || [];
+      if (matches.length > 0) {
+        var score = matches.length * p.weight;
+        totalScore += score;
+        results.push({ name: p.name, count: matches.length, score: score });
+      }
+    });
+    var risk = totalScore > 80 ? "🔴 High Risk" :
+               totalScore > 30 ? "🟡 Medium Risk" :
+               totalScore > 8  ? "🟢 Low Risk" : "⚪ Minimal";
+    return { results: results, totalScore: totalScore, risk: risk };
+  }
+
+  /* ── STRING.CHAR DECODER (from decryptor_main.py → process_string_escapes) ──
+     Converts string.char(72,101,108,...) → "Hello..." */
+  function decodeStringChar(src) {
+    return src.replace(/string\.char\(([^)]+)\)/g, function(match, args) {
+      try {
+        var nums = args.split(",").map(function(n) { return parseInt(n.trim(), 10); });
+        if (nums.some(isNaN)) return match;
+        return '"' + nums.map(function(n) { return String.fromCharCode(n); }).join("") + '"';
+      } catch(e) { return match; }
+    });
+  }
+
+  /* ── ESCAPE SEQUENCE DECODER (from decryptor_main.py → process_string_escapes) ──
+     Converts \072\101\108 and \x48\x65\x6c → readable chars */
+  function decodeEscapes(src) {
+    /* \ddd decimal escapes inside strings */
+    src = src.replace(/(["'])([^"']*?)\1/g, function(match, q, inner) {
+      var decoded = inner.replace(/\\([0-9]{1,3})/g, function(_, num) {
+        return String.fromCharCode(parseInt(num, 10));
+      });
+      decoded = decoded.replace(/\\x([0-9A-Fa-f]{2})/g, function(_, hex) {
+        return String.fromCharCode(parseInt(hex, 16));
+      });
+      return q + decoded + q;
+    });
+    return src;
+  }
+
+  /* ── HEX LITERAL DECODER (from decryptor_main.py → process_hex_data) ──
+     Converts 0x48 → 72, keeps context readable */
+  function decodeHexLiterals(src) {
+    return src.replace(/\b0x([0-9A-Fa-f]+)\b/g, function(match, hex) {
+      var n = parseInt(hex, 16);
+      return isNaN(n) ? match : String(n);
+    });
+  }
+
+  /* ── BASE64 DETECTOR (from decryptor_main.py → process_base64) ──
+     Finds likely base64 blobs and decodes them */
+  function decodeBase64Blobs(src) {
+    return src.replace(/(["'])([A-Za-z0-9+\/]{20,}={0,2})\1/g, function(match, q, b64) {
+      try {
+        /* Fix padding */
+        var pad = b64.length % 4;
+        if (pad) b64 += "=".repeat(4 - pad);
+        var decoded = atob(b64);
+        /* Only replace if decoded is printable ASCII */
+        if (/^[\x20-\x7E\n\r\t]+$/.test(decoded)) {
+          return q + decoded + q;
+        }
+        return match;
+      } catch(e) { return match; }
+    });
+  }
+
+  /* ── WRAPPER STRIPPER ──
+     Removes (function(...) ... end)(...) outer shells */
+  function stripWrappers(src) {
+    var changed = true;
+    var iterations = 0;
+    while (changed && iterations < 10) {
+      changed = false;
+      iterations++;
+      /* Match ;(function(...)\n ... \nend)(...) pattern */
+      var stripped = src.replace(/^[\s;]*\(function\s*\([^)]*\)\s*\n?([\s\S]*?)\n?\s*end\s*\)\s*\([^)]*\)\s*$/, function(_, inner) {
+        changed = true;
+        return inner.trim();
+      });
+      if (changed) src = stripped;
+    }
+    return src;
+  }
+
+  /* ── LOADSTRING UNWRAPPER ──
+     Resolves loadstring(string.char(...))() by decoding the bytes */
+  function unwrapLoadstring(src) {
+    return src.replace(/loadstring\s*\(\s*(string\.char\([^)]+\)(?:\.\.[^)]+)*)\s*\)\s*\(\)/g, function(match, charExpr) {
+      try {
+        /* Collect all string.char(...) calls and concat them */
+        var combined = "";
+        var re = /string\.char\(([^)]+)\)/g;
+        var m;
+        while ((m = re.exec(charExpr)) !== null) {
+          var nums = m[1].split(",").map(function(n) { return parseInt(n.trim(), 10); });
+          combined += nums.map(function(n) { return String.fromCharCode(n); }).join("");
+        }
+        if (combined.length > 0) {
+          return "-- [DECODED LOADSTRING]\n" + combined;
+        }
+        return match;
+      } catch(e) { return match; }
+    });
+  }
+
+  /* ── DATA TABLE EXTRACTOR (from decryptor_main.py → locate_data_tables) ──
+     Pulls string values out of local t = {...} tables */
+  function extractTableStrings(src) {
+    var found = [];
+    var tableRe = /local\s+(\w+)\s*=\s*\{([^}]{0,4000})\}/g;
+    var m;
+    while ((m = tableRe.exec(src)) !== null) {
+      var body = m[2];
+      var strRe = /(["'])((?:\\.|(?!\1)[^\\])*?)\1/g;
+      var sm;
+      var items = [];
+      while ((sm = strRe.exec(body)) !== null) {
+        var val = sm[2]
+          .replace(/\\n/g, "\n").replace(/\\t/g, "\t").replace(/\\r/g, "\r")
+          .replace(/\\([0-9]{1,3})/g, function(_, n) { return String.fromCharCode(parseInt(n, 10)); })
+          .replace(/\\x([0-9A-Fa-f]{2})/g, function(_, h) { return String.fromCharCode(parseInt(h, 16)); });
+        if (val.trim().length > 0) items.push(val);
+      }
+      if (items.length > 0) found.push({ table: m[1], strings: items });
+    }
+    return found;
+  }
+
+  /* ── PRETTY PRINTER ──
+     Re-indents minified one-liner Lua code */
+  function prettyPrint(src) {
+    var indent = 0;
+    var lines = [];
+    /* Split on semicolons and newlines, then re-indent based on keywords */
+    var tokens = src.replace(/;/g, "\n").split("\n");
+    var openers = /\b(function|do|then|repeat|else|elseif)\b/;
+    var closers = /\b(end|until)\b/;
+    var bothEnds = /\b(else|elseif)\b/;
+
+    tokens.forEach(function(line) {
+      line = line.trim();
+      if (line.length === 0) return;
+      if (closers.test(line) && !bothEnds.test(line)) indent = Math.max(0, indent - 1);
+      if (bothEnds.test(line)) indent = Math.max(0, indent - 1);
+      lines.push("  ".repeat(indent) + line);
+      if (openers.test(line) || bothEnds.test(line)) indent++;
+      if (closers.test(line) && bothEnds.test(line)) indent++;
+    });
+    return lines.join("\n");
+  }
+
+  /* ── MAIN DEOBFUSCATE (mirrors controller_main.py orchestration) ── */
+  function deobfuscate(src) {
+    var output = src;
+
+    /* Pass 1: Unwrap loadstring(string.char(...))() — most common obfuscation */
+    output = unwrapLoadstring(output);
+
+    /* Pass 2: Decode string.char() calls */
+    output = decodeStringChar(output);
+
+    /* Pass 3: Decode escape sequences inside strings */
+    output = decodeEscapes(output);
+
+    /* Pass 4: Decode hex literals to decimals */
+    output = decodeHexLiterals(output);
+
+    /* Pass 5: Decode base64 blobs */
+    output = decodeBase64Blobs(output);
+
+    /* Pass 6: Strip anonymous wrappers */
+    output = stripWrappers(output);
+
+    /* Pass 7: Pretty-print if it looks minified */
+    var avgLineLen = src.length / (src.split("\n").length || 1);
+    if (avgLineLen > 200) {
+      output = prettyPrint(output);
+    }
+
+    /* Scan patterns on ORIGINAL source for accurate risk score */
+    var scan = scanPatterns(src);
+
+    /* Extract table strings from decoded output */
+    var tables = extractTableStrings(output);
+
+    return {
+      decoded: output,
+      scan: scan,
+      tables: tables
+    };
+  }
+
+  return { deobfuscate: deobfuscate };
+})();
+
+/* ── Deobfuscator UI handlers ── */
+async function runDeobfuscate() {
+  var src = document.getElementById("deobfInput").value.trim();
+  if (!src) return;
+
+  var btn = document.getElementById("deobfBtn");
+  btn.disabled = true;
+  btn.textContent = "⏳ Analyzing...";
+
+  await new Promise(function(r) { setTimeout(r, 300); });
+
+  try {
+    var result = Y2KDeobfuscator.deobfuscate(src);
+
+    /* Show output box */
+    document.getElementById("deobfOutputBox").style.display = "block";
+    document.getElementById("deobfOutput").value = result.decoded;
+
+    /* Risk banner */
+    var banner = document.getElementById("deobfRiskBanner");
+    banner.style.display = "block";
+    var score = result.scan.totalScore;
+    banner.textContent = result.scan.risk + " — Detection Score: " + score;
+    if (score > 80) {
+      banner.style.background = "rgba(248,81,73,0.1)";
+      banner.style.borderColor = "rgba(248,81,73,0.3)";
+      banner.style.color = "var(--red)";
+    } else if (score > 30) {
+      banner.style.background = "rgba(201,168,76,0.1)";
+      banner.style.borderColor = "rgba(201,168,76,0.3)";
+      banner.style.color = "var(--gold)";
+    } else {
+      banner.style.background = "rgba(63,185,80,0.1)";
+      banner.style.borderColor = "rgba(63,185,80,0.3)";
+      banner.style.color = "var(--green)";
+    }
+
+    /* Extracted strings from tables */
+    var strBox = document.getElementById("deobfStrings");
+    if (result.tables.length > 0) {
+      var html = "";
+      result.tables.forEach(function(t) {
+        html += "<div style='margin-bottom:8px'><span style='color:var(--gold);font-weight:700'>" + t.table + "</span><br>";
+        t.strings.slice(0, 20).forEach(function(s, i) {
+          var safe = s.replace(/</g,"&lt;").replace(/>/g,"&gt;").slice(0, 120);
+          html += "<span style='color:var(--text)'>[" + i + "]</span> " + safe + "<br>";
+        });
+        if (t.strings.length > 20) html += "<span style='color:var(--muted)'>...+" + (t.strings.length - 20) + " more</span><br>";
+        html += "</div>";
+      });
+      strBox.innerHTML = html;
+    } else {
+      strBox.textContent = "No data tables found.";
+    }
+
+    /* Pattern report */
+    var patBox = document.getElementById("deobfPatterns");
+    if (result.scan.results.length > 0) {
+      var html2 = "";
+      result.scan.results.forEach(function(p) {
+        var bar = Math.min(Math.round((p.score / (result.scan.totalScore || 1)) * 100), 100);
+        html2 += "<div style='margin-bottom:6px'>"
+          + "<div style='display:flex;justify-content:space-between'>"
+          + "<span style='color:var(--text)'>" + p.name + "</span>"
+          + "<span style='color:var(--gold)'>" + p.count + "x (score: " + p.score + ")</span>"
+          + "</div>"
+          + "<div style='background:var(--surface2);border-radius:4px;height:4px;margin-top:3px'>"
+          + "<div style='background:var(--gold);border-radius:4px;height:4px;width:" + bar + "%'></div>"
+          + "</div></div>";
+      });
+      patBox.innerHTML = html2;
+    } else {
+      patBox.textContent = "No suspicious patterns detected.";
+    }
+
+  } catch(e) {
+    document.getElementById("deobfOutput").value = "-- Error: " + e.message;
+    document.getElementById("deobfOutputBox").style.display = "block";
+  }
+
+  btn.disabled = false;
+  btn.textContent = "🔍 Deobfuscate Script";
+}
+
+function deobfCopy() {
+  var val = document.getElementById("deobfOutput").value;
+  if (!val) return;
+  navigator.clipboard.writeText(val).then(function() {
+    var b = document.getElementById("deobfCopyBtn");
+    b.textContent = "COPIED!";
+    setTimeout(function() { b.textContent = "COPY"; }, 1500);
+  });
+}
+
+function deobfClear() {
+  document.getElementById("deobfInput").value = "";
+  document.getElementById("deobfOutput").value = "";
+  document.getElementById("deobfOutputBox").style.display = "none";
+  document.getElementById("deobfRiskBanner").style.display = "none";
 }
 
 </script>
