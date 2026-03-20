@@ -1249,99 +1249,198 @@ function copyScript(btnId, idx) {
    (ported from Lua Guard source)
 ══════════════════════════════════════ */
 var Y2KObfuscator = (function() {
-  var reserved = new Set([
-    'and','break','do','else','elseif','end','false','for','function','if',
-    'in','local','nil','not','or','repeat','return','then','true','until','while',
-    'print','warn','error','wait','spawn','delay','task','game','workspace','script',
-    'Enum','Vector3','Color3','Instance','getfenv','setfenv','loadstring','require',
-    'tick','time','typeof','unpack','pairs','ipairs','next','math','string','table',
-    'coroutine','debug','os','utf8','SharedTable','pcall','xpcall','select','rawequal',
-    'rawget','rawset','rawlen','newproxy','getmetatable','setmetatable','type','assert',
-    'self','owner','Players','Lighting','ReplicatedStorage','ServerScriptService',
-    'ServerStorage','StarterGui','StarterPack','StarterPlayer','Teams','SoundService',
-    'HttpService','Debris','TeleportService','GuiService','RunService','UserInputService',
-    'GetService','FindFirstChild','WaitForChild','Connect','FireServer','InvokeServer'
+
+  /* ── Reserved words — never rename these ── */
+  var RESERVED = new Set([
+    "and","break","do","else","elseif","end","false","for","function","if",
+    "in","local","nil","not","or","repeat","return","then","true","until","while",
+    "print","warn","error","wait","spawn","delay","task","game","workspace","script",
+    "Enum","Vector3","Vector2","CFrame","Color3","UDim2","UDim","Ray","Region3",
+    "Instance","getfenv","setfenv","loadstring","require","tick","time","typeof",
+    "unpack","pairs","ipairs","next","math","string","table","coroutine","debug",
+    "os","utf8","SharedTable","pcall","xpcall","select","rawequal","rawget","rawset",
+    "rawlen","newproxy","getmetatable","setmetatable","type","assert","tonumber",
+    "tostring","collectgarbage","dofile","load","loadfile","io","_G","_VERSION",
+    "self","super","Players","Lighting","ReplicatedStorage","ServerScriptService",
+    "ServerStorage","StarterGui","StarterPack","StarterPlayer","Teams","SoundService",
+    "HttpService","Debris","TeleportService","GuiService","RunService","UserInputService",
+    "ContextActionService","TweenService","PhysicsService","CollectionService",
+    "GetService","FindFirstChild","FindFirstChildOfClass","FindFirstAncestor",
+    "WaitForChild","Connect","Disconnect","FireServer","FireClient","FireAllClients",
+    "InvokeServer","InvokeClient","Clone","Destroy","Remove","IsA","IsDescendantOf",
+    "GetChildren","GetDescendants","GetPropertyChangedSignal","Changed","Parent",
+    "Name","Value","Position","Size","CFrame","Rotation","Anchored","Transparency",
+    "Color","Material","BrickColor","CanCollide","Massless","Enabled","Visible",
+    "Text","TextColor3","Font","TextSize","BackgroundColor3","BorderSizePixel",
+    "ZIndex","LayoutOrder","AnchorPoint","RobloxLocked","Archivable","Character",
+    "HumanoidRootPart","Humanoid","Head","Health","MaxHealth","WalkSpeed","JumpPower",
+    "LocalPlayer","UserId","DisplayName","AccountAge","Team","TeamColor",
+    "RenderStepped","Heartbeat","Stepped","BindToRenderStep","UnbindFromRenderStep"
   ]);
 
+  /* ── Generate unreadable Il-style identifier ── */
   function genId() {
-    var chars = "Il";
-    var id = "";
-    for (var i = 0; i < 10; i++) id += chars[Math.floor(Math.random() * chars.length)];
-    return "_" + id;
+    var chars = "IlIl";
+    var id = "_";
+    for (var i = 0; i < 12; i++) id += chars[Math.floor(Math.random() * chars.length)];
+    return id;
   }
 
-  function encodeString(str) {
-    var content = str.slice(1, -1);
-    if (content.length === 0) return str;
-    var result = "";
-    for (var i = 0; i < content.length; i++) {
-      result += "\\" + content.charCodeAt(i).toString().padStart(3, "0");
+  /* ── Encode a quoted string to \ddd escape sequences ── */
+  function encodeStr(str) {
+    /* Only handle simple single/double quoted strings, not long strings */
+    if (str[0] !== '"' && str[0] !== "'") return str;
+    var q = str[0];
+    var inner = str.slice(1, -1);
+    if (inner.length === 0) return str;
+    var out = "";
+    for (var i = 0; i < inner.length; i++) {
+      var c = inner.charCodeAt(i);
+      out += "\\" + c.toString().padStart(3, "0");
     }
-    return '"' + result + '"';
+    return q + out + q;
   }
 
+  /* ── Main obfuscate function ── */
   function obfuscate(code, settings) {
-    var output = code;
+    try {
+      var output = code;
 
-    // 1. Extract and protect strings
-    var strings = [];
-    output = output.replace(/(["'])(?:(?=(\\?))\2.)*?\1|\[\[[\s\S]*?\]\]/g, function(match) {
-      var id = "__LUA_STR_" + strings.length + "__";
-      strings.push(match);
-      return id;
-    });
+      /* ── Step 1: Pull out ALL string literals and comments to protect them ── */
+      var segments = [];   /* {type: 'str'|'comment'|'code', value: string} */
 
-    // 2. Variable renaming
-    if (settings.varRename) {
-      var varMap = {};
-      var namesToRename = new Set();
-      var localMatches = output.matchAll(/\blocal\s+(?:function\s+)?([a-zA-Z0-9_]+)/g);
-      for (var m of localMatches) {
-        var name = m[1];
-        if (name && !reserved.has(name) && isNaN(name[0])) namesToRename.add(name);
+      /* Tokenise the source into protected segments */
+      var i = 0;
+      var src = output;
+      var result = "";
+
+      while (i < src.length) {
+        /* Long comment --[[ ... ]] */
+        if (src[i] === "-" && src[i+1] === "-" && src[i+2] === "[" && src[i+3] === "[") {
+          var end = src.indexOf("]]", i + 4);
+          if (end === -1) end = src.length - 2;
+          var tok = src.slice(i, end + 2);
+          var ph = "\x01COMMENT" + segments.length + "\x01";
+          segments.push({ type: "comment", value: tok });
+          result += ph;
+          i = end + 2;
+          continue;
+        }
+        /* Line comment -- */
+        if (src[i] === "-" && src[i+1] === "-") {
+          var end2 = src.indexOf("\n", i);
+          if (end2 === -1) end2 = src.length;
+          var tok2 = src.slice(i, end2);
+          var ph2 = "\x01COMMENT" + segments.length + "\x01";
+          segments.push({ type: "comment", value: tok2 });
+          result += ph2;
+          i = end2;
+          continue;
+        }
+        /* Long string [[ ... ]] */
+        if (src[i] === "[" && src[i+1] === "[") {
+          var end3 = src.indexOf("]]", i + 2);
+          if (end3 === -1) end3 = src.length - 2;
+          var tok3 = src.slice(i, end3 + 2);
+          var ph3 = "\x01STR" + segments.length + "\x01";
+          segments.push({ type: "str", value: tok3 });
+          result += ph3;
+          i = end3 + 2;
+          continue;
+        }
+        /* Quoted string " or ' */
+        if (src[i] === '"' || src[i] === "'") {
+          var q = src[i];
+          var j = i + 1;
+          while (j < src.length) {
+            if (src[j] === "\\" ) { j += 2; continue; }
+            if (src[j] === q) { j++; break; }
+            if (src[j] === "\n") break; /* unterminated string — bail */
+            j++;
+          }
+          var tok4 = src.slice(i, j);
+          var ph4 = "\x01STR" + segments.length + "\x01";
+          segments.push({ type: "str", value: tok4 });
+          result += ph4;
+          i = j;
+          continue;
+        }
+        result += src[i];
+        i++;
       }
-      var sorted = Array.from(namesToRename).sort(function(a,b){ return b.length - a.length; });
-      sorted.forEach(function(name) {
-        var newId = genId();
-        varMap[name] = newId;
-        var reg = new RegExp("(?<![.:])\b" + name + "\b", "g");
-        output = output.replace(reg, newId);
+      output = result;
+
+      /* ── Step 2: Variable renaming (only on code, not strings/comments) ── */
+      if (settings.varRename) {
+        var namesToRename = new Set();
+        var declRe = /\blocal\s+(?:function\s+)?([a-zA-Z_][a-zA-Z0-9_]*)/g;
+        var m;
+        while ((m = declRe.exec(output)) !== null) {
+          var nm = m[1];
+          if (!RESERVED.has(nm)) namesToRename.add(nm);
+        }
+        /* Sort longest first to prevent partial replacement */
+        var sorted = Array.from(namesToRename).sort(function(a, b) { return b.length - a.length; });
+        sorted.forEach(function(name) {
+          var newId = genId();
+          /* Match whole word, NOT preceded by . or : (property/method access) */
+          var re = new RegExp("(?<![.:\\w])" + name + "(?![\\w])", "g");
+          output = output.replace(re, newId);
+        });
+      }
+
+      /* ── Step 3: Hex-encode integer literals ── */
+      if (settings.numHex) {
+        /* Only match standalone integers — not floats, not inside identifiers */
+        output = output.replace(/\b(\d+)\b(?!\s*[\.\d])/g, function(match) {
+          var n = parseInt(match, 10);
+          if (isNaN(n)) return match;
+          return "0x" + n.toString(16).toUpperCase();
+        });
+      }
+
+      /* ── Step 4: Restore strings (encoding them if enabled) ── */
+      output = output.replace(/\x01STR(\d+)\x01/g, function(_, idx) {
+        var s = segments[parseInt(idx)].value;
+        return settings.stringEncode ? encodeStr(s) : s;
       });
-    }
-
-    // 3. Hex numbering
-    if (settings.numHex) {
-      output = output.replace(/(?<![a-zA-Z0-9_])\b\d+(\.\d+)?\b/g, function(match) {
-        var num = parseFloat(match);
-        if (isNaN(num) || match.includes(".")) return match;
-        return "0x" + num.toString(16).toUpperCase();
+      /* Restore comments (always as-is) */
+      output = output.replace(/\x01COMMENT(\d+)\x01/g, function(_, idx) {
+        return segments[parseInt(idx)].value;
       });
+
+      /* ── Step 5: Wrapper ── */
+      if (settings.wrapper) {
+        output = ";(function(...)\n" + output + "\nend)(...)";
+      }
+
+      /* ── Step 6: Minify ── */
+      if (settings.minify) {
+        /* Strip comments */
+        output = output.replace(/--\[\[[\s\S]*?\]\]/g, "");
+        output = output.replace(/--[^\n]*/g, "");
+        /* Collapse whitespace */
+        output = output.replace(/[ \t]+/g, " ");
+        /* Remove blank lines */
+        output = output.replace(/\n\s*\n/g, "\n");
+        /* Ensure keywords have surrounding spaces so they don't merge */
+        var kws = ["local","function","then","do","else","elseif","return",
+                   "end","and","or","not","if","while","for","in","repeat","until"];
+        kws.forEach(function(kw) {
+          output = output.replace(new RegExp("([^a-zA-Z0-9_])" + kw + "([^a-zA-Z0-9_])", "g"),
+            "$1 " + kw + " $2");
+        });
+        /* Collapse to single line, then break after each 'end' for executor safety */
+        output = output.replace(/\s+/g, " ").trim();
+        output = output.replace(/ end /g, " end\n");
+      }
+
+      return "--[[ Protected by Y2KS Obfuscator ]]\n" + output;
+
+    } catch (e) {
+      /* If anything breaks, return original untouched */
+      return "--[[ Y2KS Obfuscator: fallback (error: " + e.message + ") ]]\n" + code;
     }
-
-    // 4. Restore and encode strings
-    output = output.replace(/__LUA_STR_(\d+)__/g, function(match, index) {
-      var original = strings[parseInt(index)];
-      return settings.stringEncode ? encodeString(original) : original;
-    });
-
-    // 5. Wrapper
-    if (settings.wrapper) {
-      output = "(function(...)\n" + output + "\nend)(...)";
-    }
-
-    // 6. Minify
-    if (settings.minify) {
-      output = output.replace(/--\[\[[\s\S]*?\]\]/g, "").replace(/--.*$/gm, "");
-      var kws = ["local","function","then","do","else","elseif","return","end","and","or","not","if","while","for","in","repeat","until"];
-      kws.forEach(function(kw) {
-        output = output.replace(new RegExp("\\b" + kw + "\\b", "g"), " " + kw + " ");
-      });
-      output = output.replace(/\s+/g, " ").trim();
-      output = output.replace(/\bend\b/g, "end\n");
-    }
-
-    output = "--[[ Protected by Y2KS Obfuscator ]]\n\n" + output;
-    return output;
   }
 
   return { obfuscate: obfuscate };
