@@ -898,196 +898,212 @@ body {
 </div>
 
 <script>
-/* ── Supabase config (hardcoded, hidden from UI) ── */
-const SB_URL = 'https://crmssbmeowfonvelbxar.supabase.co';
-const SB_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImNybXNzYm1lb3dmb252ZWxieGFyIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzQwMzI3NDAsImV4cCI6MjA4OTYwODc0MH0.gqltKyT7TsToaxSe1pi7zSejE6Qkx6mMw0IceNDBpYs';
-const SB_TABLE = 'scripts';
+const SB_URL   = "https://crmssbmeowfonvelbxar.supabase.co";
+const SB_KEY   = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImNybXNzYm1lb3dmb252ZWxieGFyIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzQwMzI3NDAsImV4cCI6MjA4OTYwODc0MH0.gqltKyT7TsToaxSe1pi7zSejE6Qkx6mMw0IceNDBpYs";
+const SB_TABLE = "scripts";
 
-/* ── Tab switcher (installs page) ── */
-function sw(i){
-  document.querySelectorAll('.tab').forEach((t,x)=>t.className=x==i?'tab active':'tab');
-  document.querySelectorAll('.cnt').forEach((c,x)=>c.className=x==i?'cnt active':'cnt');
+/* ── Obfuscator: encode entire script as byte array ── */
+function obfuscateLua(src) {
+  try {
+    var junk = "";
+    for (var j = 0; j < 6; j++) {
+      var v = Math.floor(Math.random() * 65535);
+      junk += "local _x" + j + "=" + v + ";";
+    }
+    var wrapped = "-- Protected by Y2KSt0re\n" + junk + "\n" + src;
+    var bytes = [];
+    for (var i = 0; i < wrapped.length; i++) bytes.push(wrapped.charCodeAt(i));
+    var chunks = [];
+    for (var i = 0; i < bytes.length; i += 200) chunks.push(bytes.slice(i, i + 200).join(","));
+    var parts = chunks.map(function(c) { return "string.char(" + c + ")"; });
+    return "loadstring(" + parts.join("..") + ")()";
+  } catch (e) { return src; }
+}
+
+/* ── Tab switcher ── */
+function sw(i) {
+  document.querySelectorAll(".tab").forEach(function(t, x) { t.className = x == i ? "tab active" : "tab"; });
+  document.querySelectorAll(".cnt").forEach(function(c, x) { c.className = x == i ? "cnt active" : "cnt"; });
 }
 
 /* ── Bottom nav ── */
-function showNav(page){
+function showNav(page) {
   event.preventDefault();
-  document.querySelectorAll('.ni').forEach(n=>n.classList.remove('active'));
-  event.currentTarget.classList.add('active');
-  document.getElementById('installsPage').style.display  = page==='installs'  ? 'block' : 'none';
-  document.getElementById('certsPage').style.display     = page==='certs'     ? 'block' : 'none';
-  document.getElementById('protectorPage').style.display = page==='protector' ? 'block' : 'none';
-  if(page==='protector') loadSavedScripts();
+  document.querySelectorAll(".ni").forEach(function(n) { n.classList.remove("active"); });
+  event.currentTarget.classList.add("active");
+  document.getElementById("installsPage").style.display  = page === "installs"  ? "block" : "none";
+  document.getElementById("certsPage").style.display     = page === "certs"     ? "block" : "none";
+  document.getElementById("protectorPage").style.display = page === "protector" ? "block" : "none";
+  if (page === "protector") loadSavedScripts();
 }
 
 /* ── Char counter ── */
-function updateCharCount(){
-  const v = document.getElementById('luaInput').value;
-  document.getElementById('luaCharCount').textContent = v.length.toLocaleString()+' chars';
+function updateCharCount() {
+  var v = document.getElementById("luaInput").value;
+  document.getElementById("luaCharCount").textContent = v.length.toLocaleString() + " chars";
 }
 
-/* ── Status helper ── */
-function setStatus(msg, type){
-  const el = document.getElementById('protStatus');
-  el.style.display = 'block';
+/* ── Status bar ── */
+function setStatus(msg, type) {
+  var el = document.getElementById("protStatus");
+  el.style.display = "block";
   el.textContent = msg;
-  if(type==='ok'){
-    el.style.background='rgba(63,185,80,0.1)';
-    el.style.borderColor='rgba(63,185,80,0.3)';
-    el.style.color='var(--green)';
-  } else if(type==='err'){
-    el.style.background='rgba(248,81,73,0.1)';
-    el.style.borderColor='rgba(248,81,73,0.2)';
-    el.style.color='var(--red)';
+  if (type === "ok") {
+    el.style.background = "rgba(63,185,80,0.1)";
+    el.style.borderColor = "rgba(63,185,80,0.3)";
+    el.style.color = "var(--green)";
+  } else if (type === "err") {
+    el.style.background = "rgba(248,81,73,0.1)";
+    el.style.borderColor = "rgba(248,81,73,0.2)";
+    el.style.color = "var(--red)";
   } else {
-    el.style.background='var(--faint)';
-    el.style.borderColor='var(--border)';
-    el.style.color='var(--muted)';
+    el.style.background = "var(--faint)";
+    el.style.borderColor = "var(--border)";
+    el.style.color = "var(--muted)";
   }
 }
 
 /* ── Supabase headers ── */
-function sbHeaders(){
-  return {
-    'Content-Type': 'application/json',
-    'Authorization': `Bearer ${SB_KEY}`,
-    'apikey': SB_KEY
-  };
+function sbHeaders(extra) {
+  return Object.assign({
+    "Content-Type": "application/json",
+    "Authorization": "Bearer " + SB_KEY,
+    "apikey": SB_KEY
+  }, extra || {});
 }
 
-/* ── Generate & upload to table ── */
-async function generateScript(){
-  const lua = document.getElementById('luaInput').value.trim();
-  if(!lua){ setStatus('⚠️ Paste your Lua script first.','err'); return; }
+/* ── Generate, obfuscate & upload ── */
+async function generateScript() {
+  var raw = document.getElementById("luaInput").value.trim();
+  if (!raw) { setStatus("⚠️ Paste your Lua script first.", "err"); return; }
 
-  const btn = document.getElementById('generateBtn');
+  var btn = document.getElementById("generateBtn");
   btn.disabled = true;
-  btn.textContent = '⏳ Uploading...';
-  setStatus('Uploading...','');
+  btn.textContent = "⏳ Obfuscating...";
+  setStatus("Obfuscating script...", "");
+
+  var lua = obfuscateLua(raw);
+  setStatus("Uploading to database...", "");
 
   try {
-    const resp = await fetch(`${SB_URL}/rest/v1/${SB_TABLE}`, {
-      method: 'POST',
-      headers: { ...sbHeaders(), 'Prefer': 'return=representation' },
+    var resp = await fetch(SB_URL + "/rest/v1/" + SB_TABLE, {
+      method: "POST",
+      headers: sbHeaders({ "Prefer": "return=representation" }),
       body: JSON.stringify({ content: lua })
     });
+    if (!resp.ok) throw new Error(await resp.text());
+    var rows = await resp.json();
+    var id = rows[0].id;
 
-    if(!resp.ok){
-      const err = await resp.text();
-      throw new Error(err || resp.statusText);
-    }
+    /* Loadstring that works in any Roblox executor:
+       Uses HttpService:RequestAsync to send the apikey header,
+       gets back JSON, decodes it, runs the content field. */
+    var loadstr = [
+      'local _hs=game:GetService("HttpService")',
+      'local _res=_hs:RequestAsync({',
+      '  Url="' + SB_URL + '/rest/v1/' + SB_TABLE + '?id=eq.' + id + '&select=content",',
+      '  Method="GET",',
+      '  Headers={["apikey"]="' + SB_KEY + '",["Authorization"]="Bearer ' + SB_KEY + '"}',
+      '})',
+      'loadstring(_hs:JSONDecode(_res.Body)[1].content)()'
+    ].join("\n");
 
-    const rows = await resp.json();
-    const id = rows[0].id;
-
-    /* The fetch URL — anyone opening this in a browser gets rickrolled.
-       The rickroll is handled by the page itself via a query param check. */
-    const fetchUrl = `${SB_URL}/rest/v1/${SB_TABLE}?id=eq.${id}&select=content&apikey=${SB_KEY}`;
-    const loadstring = `loadstring(game:HttpGet("${fetchUrl}"))()`;
-
-    /* Save to localStorage history */
     try {
-      const history = JSON.parse(localStorage.getItem('y2k_scripts')||'[]');
-      history.unshift({ id, loadstring, ts: Date.now() });
-      if(history.length > 20) history.pop();
-      localStorage.setItem('y2k_scripts', JSON.stringify(history));
-    } catch(e){}
+      var h = JSON.parse(localStorage.getItem("y2k_scripts") || "[]");
+      h.unshift({ id: id, loadstring: loadstr, ts: Date.now() });
+      if (h.length > 20) h.pop();
+      localStorage.setItem("y2k_scripts", JSON.stringify(h));
+    } catch (e) {}
 
-    document.getElementById('loadstringOut').textContent = loadstring;
-    document.getElementById('outputBox').style.display = 'block';
-    document.getElementById('outputBox').dataset.id = id;
-    setStatus('✅ Script uploaded successfully!', 'ok');
+    document.getElementById("loadstringOut").textContent = loadstr;
+    document.getElementById("outputBox").style.display = "block";
+    document.getElementById("outputBox").dataset.id = id;
+    setStatus("✅ Obfuscated & uploaded!", "ok");
     loadSavedScripts();
-
-  } catch(e){
-    setStatus('❌ Upload failed: ' + e.message, 'err');
+  } catch (e) {
+    setStatus("❌ Upload failed: " + e.message, "err");
   }
 
   btn.disabled = false;
-  btn.textContent = '⚡ Generate Loadstring';
+  btn.textContent = "⚡ Generate Loadstring";
 }
 
-/* ── Rickroll anyone who opens the page with ?script= param in browser ── */
-(function(){
-  const params = new URLSearchParams(window.location.search);
-  if(params.has('script') || params.has('id')){
-    window.location.replace('https://www.youtube.com/watch?v=dQw4w9WgXcQ');
-  }
-})();
-
 /* ── Copy loadstring ── */
-function copyLoadstring(){
-  const txt = document.getElementById('loadstringOut').textContent;
-  if(!txt) return;
-  navigator.clipboard.writeText(txt).then(()=>{
-    setStatus('📋 Copied to clipboard!','ok');
-  }).catch(()=>{
-    const ta = document.createElement('textarea');
-    ta.value = txt; document.body.appendChild(ta); ta.select();
-    document.execCommand('copy'); document.body.removeChild(ta);
-    setStatus('📋 Copied to clipboard!','ok');
-  });
+function copyLoadstring() {
+  var txt = document.getElementById("loadstringOut").textContent;
+  if (!txt) return;
+  navigator.clipboard.writeText(txt)
+    .then(function() { setStatus("📋 Copied!", "ok"); })
+    .catch(function() {
+      var ta = document.createElement("textarea");
+      ta.value = txt;
+      document.body.appendChild(ta);
+      ta.select();
+      document.execCommand("copy");
+      document.body.removeChild(ta);
+      setStatus("📋 Copied!", "ok");
+    });
 }
 
 /* ── Delete script ── */
-async function deleteScript(){
-  const id = document.getElementById('outputBox').dataset.id;
-  if(!id) return;
+async function deleteScript() {
+  var id = document.getElementById("outputBox").dataset.id;
+  if (!id) return;
   try {
-    const resp = await fetch(`${SB_URL}/rest/v1/${SB_TABLE}?id=eq.${id}`, {
-      method: 'DELETE',
+    var resp = await fetch(SB_URL + "/rest/v1/" + SB_TABLE + "?id=eq." + id, {
+      method: "DELETE",
       headers: sbHeaders()
     });
-    if(!resp.ok) throw new Error(await resp.text());
-    try{
-      const h = JSON.parse(localStorage.getItem('y2k_scripts')||'[]');
-      localStorage.setItem('y2k_scripts', JSON.stringify(h.filter(s=>s.id!==id)));
-    }catch(e){}
-    document.getElementById('outputBox').style.display = 'none';
-    document.getElementById('protStatus').style.display = 'none';
-    setStatus('🗑️ Script deleted.','');
+    if (!resp.ok) throw new Error(await resp.text());
+    try {
+      var h = JSON.parse(localStorage.getItem("y2k_scripts") || "[]");
+      localStorage.setItem("y2k_scripts", JSON.stringify(h.filter(function(s) { return s.id !== id; })));
+    } catch (e) {}
+    document.getElementById("outputBox").style.display = "none";
+    document.getElementById("protStatus").style.display = "none";
+    setStatus("🗑️ Deleted.", "");
     loadSavedScripts();
-  } catch(e){
-    setStatus('❌ Delete failed: '+e.message,'err');
+  } catch (e) {
+    setStatus("❌ Delete failed: " + e.message, "err");
   }
 }
 
-/* ── Load saved scripts ── */
-function loadSavedScripts(){
-  const container = document.getElementById('savedScriptsList');
+/* ── Saved scripts list ── */
+function loadSavedScripts() {
+  var c = document.getElementById("savedScriptsList");
   try {
-    const history = JSON.parse(localStorage.getItem('y2k_scripts')||'[]');
-    if(!history.length){
-      container.innerHTML='<div style="text-align:center;padding:20px;color:var(--muted);font-size:12px">No scripts yet — generate one above!</div>';
+    var h = JSON.parse(localStorage.getItem("y2k_scripts") || "[]");
+    if (!h.length) {
+      c.innerHTML = "<div style='text-align:center;padding:20px;color:var(--muted);font-size:12px'>No scripts yet — generate one above!</div>";
       return;
     }
-    container.innerHTML = history.map(s=>`
-      <div style="background:var(--bg);border:1px solid var(--border);border-radius:10px;padding:12px;margin-bottom:8px">
-        <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:8px">
-          <div style="font-size:11px;font-weight:700;color:var(--text);font-family:'DM Mono',monospace">${s.id.slice(0,8)}...</div>
-          <div style="font-size:10px;color:var(--muted)">${new Date(s.ts).toLocaleDateString()}</div>
-        </div>
-        <div style="font-size:10px;color:var(--muted);font-family:'DM Mono',monospace;word-break:break-all;margin-bottom:8px;background:var(--surface2);padding:6px 8px;border-radius:6px">${s.loadstring}</div>
-        <button onclick="copyStr('${s.loadstring.replace(/'/g,"\\'")}',this)" style="width:100%;background:var(--gold-dim);border:1px solid rgba(201,168,76,0.3);color:var(--gold);font-size:11px;font-weight:700;padding:7px;border-radius:7px;cursor:pointer;font-family:'DM Sans',sans-serif">📋 Copy Loadstring</button>
-      </div>
-    `).join('');
-  } catch(e){
-    container.innerHTML='<div style="text-align:center;padding:20px;color:var(--red);font-size:12px">Error loading history</div>';
+    c.innerHTML = h.map(function(s) {
+      var preview = s.loadstring.slice(0, 120).replace(/</g, "&lt;").replace(/>/g, "&gt;");
+      var encoded = encodeURIComponent(s.loadstring);
+      return "<div style='background:var(--bg);border:1px solid var(--border);border-radius:10px;padding:12px;margin-bottom:8px'>"
+        + "<div style='display:flex;justify-content:space-between;align-items:center;margin-bottom:8px'>"
+        + "<div style='font-size:11px;font-weight:700;color:var(--text)'>" + s.id.slice(0, 8) + "...</div>"
+        + "<div style='font-size:10px;color:var(--muted)'>" + new Date(s.ts).toLocaleDateString() + "</div>"
+        + "</div>"
+        + "<div style='font-size:10px;color:var(--muted);word-break:break-all;margin-bottom:8px;background:var(--surface2);padding:6px 8px;border-radius:6px;max-height:54px;overflow:hidden'>" + preview + "...</div>"
+        + "<button data-ls='" + encoded + "' onclick='copyEncoded(this)' style='width:100%;background:var(--gold-dim);border:1px solid rgba(201,168,76,0.3);color:var(--gold);font-size:11px;font-weight:700;padding:7px;border-radius:7px;cursor:pointer'>📋 Copy Loadstring</button>"
+        + "</div>";
+    }).join("");
+  } catch (e) {
+    c.innerHTML = "<div style='text-align:center;padding:20px;color:var(--red);font-size:12px'>Error loading history</div>";
   }
 }
 
-function copyStr(str, btn){
-  navigator.clipboard.writeText(str).then(()=>{
-    const orig = btn.textContent;
-    btn.textContent='✅ Copied!';
-    setTimeout(()=>btn.textContent=orig, 1500);
-  }).catch(()=>{
-    const ta=document.createElement('textarea');
-    ta.value=str; document.body.appendChild(ta); ta.select();
-    document.execCommand('copy'); document.body.removeChild(ta);
-    const orig=btn.textContent; btn.textContent='✅ Copied!';
-    setTimeout(()=>btn.textContent=orig,1500);
-  });
+/* ── Copy from data attribute (avoids quote escaping issues) ── */
+function copyEncoded(btn) {
+  var str = decodeURIComponent(btn.getAttribute("data-ls"));
+  navigator.clipboard.writeText(str)
+    .then(function() { var o = btn.textContent; btn.textContent = "✅ Copied!"; setTimeout(function() { btn.textContent = o; }, 1500); })
+    .catch(function() {
+      var ta = document.createElement("textarea"); ta.value = str;
+      document.body.appendChild(ta); ta.select(); document.execCommand("copy"); document.body.removeChild(ta);
+      var o = btn.textContent; btn.textContent = "✅ Copied!"; setTimeout(function() { btn.textContent = o; }, 1500);
+    });
 }
 </script>
 </body>
